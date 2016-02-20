@@ -80,7 +80,7 @@ class mahangu_Troll_Trap
 
 	public function comments_tag($comment_id) {
 
-		$default_filter = esc_attr(get_option('trolltrap_default_filter'));
+		$default_filter = esc_attr(get_option('trolltrap_default_filter', 'piglatin'));
 
 		$comment = get_comment($comment_id);
 
