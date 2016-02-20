@@ -113,13 +113,13 @@ class mahangu_Troll_Trap
 			) {
 
 				update_comment_meta($comment_id, '_trolltrap_filter', $default_filter, true);
+				break;
 
-			} else {
-
-				update_comment_meta($comment_id, '_trolltrap_filter', "none", true);
 			}
 
 		}
+
+		update_comment_meta($comment_id, '_trolltrap_filter', "none", true);
 
 	} // End comments_tag()
 
