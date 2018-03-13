@@ -60,9 +60,9 @@ class mahangu_Troll_Trap
 
 	public function initialize_global_objects() {
 
-		$this->settings = new mahangu_TT_settings(); // Settings->Discussion and Comments panel setup class.
+		$this->settings = new mahangu_Troll_Trap_settings(); // Settings->Discussion and Comments panel setup class.
 
-		$this->convert = new mahangu_TT_convert(); // Text manipulation class.
+		$this->convert = new mahangu_Troll_Trap_convert(); // Text manipulation class.
 
 	}
 

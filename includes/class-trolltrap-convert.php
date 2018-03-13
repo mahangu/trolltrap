@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 // Text manipulation class.
 
-class mahangu_TT_convert {
+class mahangu_Troll_Trap_convert {
 
     public function pig_latin($text) {
 

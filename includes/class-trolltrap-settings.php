@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 // Settings->Discussion and Comments panel setup class.
 
-class mahangu_TT_settings extends mahangu_Troll_Trap {
+class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 
 
@@ -18,7 +18,14 @@ class mahangu_TT_settings extends mahangu_Troll_Trap {
 		add_action('manage_comments_custom_column', array ($this, 'admin_column_output'), 10, 2);
 		add_filter('manage_edit-comments_columns', array ($this, 'admin_column_setup') );
 
-	}
+        add_filter( 'bulk_actions-edit-comments', array ($this, 'register_bulk_actions') );
+        add_filter( 'handle_bulk_actions-edit-comments', array ($this, 'handle_bulk_actions'), 1, 3);
+
+        add_action( 'admin_notices', array ($this, 'handle_bulk_actions_notice') );
+
+
+
+    }
 
 
 
@@ -121,7 +128,49 @@ class mahangu_TT_settings extends mahangu_Troll_Trap {
 	}
 
 
-	public function admin_column_setup($columns) {
+     public function register_bulk_actions($bulk_actions) {
+        $bulk_actions['mark_as_troll'] = __( 'Mark as Troll', 'mark_as_troll');
+        return $bulk_actions;
+    }
+
+
+    public function handle_bulk_actions( $redirect_to, $doaction, $comment_ids ) {
+
+	    // Need to add a nonce here.
+
+        if ( $doaction !== 'mark_as_troll' ) {
+            return $redirect_to;
+        }
+
+        $default_filter = esc_attr(get_option('trolltrap_default_filter', 'piglatin'));
+
+
+        foreach ( $comment_ids as $comment_id ) {
+
+            update_comment_meta($comment_id, '_trolltrap_filter', $default_filter, '');
+
+        }
+
+        $redirect_to = add_query_arg( 'bulk_troll_comments', count( $comment_ids ), $redirect_to );
+        return $redirect_to;
+    }
+
+
+    public function handle_bulk_actions_notice() {
+        if ( ! empty( $_REQUEST['bulk_troll_comments'] ) ) {
+            $marked_comments = intval( $_REQUEST['bulk_troll_comments'] );
+            printf( '<div id="message" class="updated fade">' .
+                _n( 'Marked %s comment as Troll.',
+                    'Marked %s comments as Troll.',
+                    $marked_comments,
+                    'mark-as_troll'
+                ) . '</div>', $marked_comments );
+        }
+    }
+
+
+
+    public function admin_column_setup($columns) {
 
 		$columns["trolltrap"] = "Troll Trap Filter";
 		return $columns;
