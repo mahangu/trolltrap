@@ -166,6 +166,10 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
         if ( 'mark_as_troll' === $doaction ) {
 
             $default_filter = get_option( 'trolltrap_default_filter', 'piglatin' );
+            $allowed        = wp_list_pluck( $this->filters, 'slug' );
+            if ( ! in_array( $default_filter, $allowed, true ) ) {
+                $default_filter = 'piglatin';
+            }
 
             foreach ( $comment_ids as $comment_id ) {
                 update_comment_meta( $comment_id, '_trolltrap_filter', $default_filter );
