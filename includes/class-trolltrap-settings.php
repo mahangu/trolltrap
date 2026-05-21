@@ -148,11 +148,18 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
     public function handle_bulk_actions( $redirect_to, $doaction, $comment_ids ) {
 
-	    // Need to add a nonce here.
-
         if ( $doaction !== 'mark_as_troll' ) {
             return $redirect_to;
         }
+
+        if ( ! current_user_can( 'moderate_comments' ) ) {
+            return $redirect_to;
+        }
+
+        // Core's edit-comments.php already verifies the 'bulk-comments' nonce
+        // before this filter fires; re-checking signals intent and protects
+        // any caller that invokes the filter directly.
+        check_admin_referer( 'bulk-comments' );
 
         $default_filter = esc_attr(get_option('trolltrap_default_filter', 'piglatin'));
 
@@ -197,7 +204,11 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 		$retrieved_nonce = $_GET['_ttnonce'];
 
-		if (isset($_GET["trolltrap"]) && isset($_GET["comment_id"])  && wp_verify_nonce($retrieved_nonce, '_ttnonce' )) {
+		if (
+			isset($_GET["trolltrap"]) && isset($_GET["comment_id"])
+			&& current_user_can( 'moderate_comments' )
+			&& wp_verify_nonce($retrieved_nonce, '_ttnonce' )
+		) {
 
 			$update_id = $_GET["comment_id"];
 
