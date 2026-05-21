@@ -88,7 +88,7 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 	public function settings_form_words() {
 
-		$data = esc_attr( get_option( 'trolltrap_words' ) ) ;
+		$data = esc_textarea( get_option( 'trolltrap_words', '' ) );
 
 		print ('<p><label for="trolltrap_words">When a comment contains any of these words in its content, name, URL, email, or IP, the default Troll Trap filter will be applied to it. One word or IP per line. It will match inside words, so “press” will match “WordPress”.</label></p>');
 
