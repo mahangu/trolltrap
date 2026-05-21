@@ -40,7 +40,8 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 		register_setting(
 			'discussion',
-			'trolltrap_words'
+			'trolltrap_words',
+			array( 'sanitize_callback' => 'sanitize_textarea_field' )
 		);
 
 		add_settings_field(
@@ -53,7 +54,8 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 		register_setting(
 			'discussion',
-			'trolltrap_default_filter'
+			'trolltrap_default_filter',
+			array( 'sanitize_callback' => array( $this, 'sanitize_default_filter' ) )
 		);
 
 		add_settings_field(
@@ -70,6 +72,16 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 	function settings_description() {
 
 		?><p class="description">Options for the Troll Trap plugin.</p><?php
+
+	}
+
+
+	public function sanitize_default_filter( $value ) {
+
+		$allowed = wp_list_pluck( $this->filters, 'slug' );
+		$allowed = array_diff( $allowed, array( 'none' ) ); // 'none' is not a valid default.
+
+		return in_array( $value, $allowed, true ) ? $value : 'piglatin';
 
 	}
 
