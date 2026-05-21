@@ -1,0 +1,21 @@
+{
+  "$schema": "https://playground.wordpress.net/blueprint-schema.json",
+  "login": true,
+  "steps": [
+    {
+      "step": "activatePlugin",
+      "pluginPath": "/wordpress/wp-content/plugins/trolltrap/index.php"
+    },
+    {
+      "step": "setSiteOptions",
+      "options": {
+        "trolltrap_words": "badger\nmushroom",
+        "trolltrap_default_filter": "disemvowel"
+      }
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php require_once '/wordpress/wp-load.php'; if ( ! class_exists( 'mahangu_Troll_Trap' ) ) { fwrite( STDERR, 'FAIL: main class not loaded' . PHP_EOL ); exit( 1 ); } if ( get_option( 'trolltrap_default_filter' ) !== 'disemvowel' ) { fwrite( STDERR, 'FAIL: option not stored' . PHP_EOL ); exit( 1 ); } echo 'OK: plugin loads, options round-trip' . PHP_EOL;"
+    }
+  ]
+}
