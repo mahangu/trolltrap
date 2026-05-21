@@ -80,7 +80,8 @@ class mahangu_Troll_Trap
 
 	public function comments_tag($comment_id) {
 
-		$default_filter = esc_attr(get_option('trolltrap_default_filter', 'piglatin'));
+		$default_filter = get_option('trolltrap_default_filter', 'piglatin');
+		$applied        = 'none';
 
 		$comment = get_comment($comment_id);
 
@@ -112,14 +113,14 @@ class mahangu_Troll_Trap
 				|| preg_match($pattern, $comment->comment_agent)
 			) {
 
-				update_comment_meta($comment_id, '_trolltrap_filter', $default_filter, true);
+				$applied = $default_filter;
 				break;
 
 			}
 
 		}
 
-		update_comment_meta($comment_id, '_trolltrap_filter', "none", true);
+		update_comment_meta($comment_id, '_trolltrap_filter', $applied);
 
 	} // End comments_tag()
 
