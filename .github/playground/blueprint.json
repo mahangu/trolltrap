@@ -16,6 +16,18 @@
     {
       "step": "runPHP",
       "code": "<?php require_once '/wordpress/wp-load.php'; if ( ! class_exists( 'mahangu_Troll_Trap' ) ) { fwrite( STDERR, 'FAIL: main class not loaded' . PHP_EOL ); exit( 1 ); } if ( get_option( 'trolltrap_default_filter' ) !== 'disemvowel' ) { fwrite( STDERR, 'FAIL: option not stored' . PHP_EOL ); exit( 1 ); } echo 'OK: plugin loads, options round-trip' . PHP_EOL;"
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php require_once '/wordpress/wp-load.php'; wp_set_current_user( 1 ); $bulk = apply_filters( 'bulk_actions-edit-comments', array() ); if ( ! isset( $bulk['mark_as_troll'] ) ) { fwrite( STDERR, 'FAIL: mark_as_troll bulk action missing' . PHP_EOL ); exit( 1 ); } if ( ! isset( $bulk['untrap'] ) ) { fwrite( STDERR, 'FAIL: untrap bulk action missing' . PHP_EOL ); exit( 1 ); } echo 'OK: both bulk actions registered' . PHP_EOL;"
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php require_once '/wordpress/wp-load.php'; wp_set_current_user( 1 ); $cid = wp_insert_comment( array( 'comment_post_ID' => 1, 'comment_content' => 'untrap target', 'comment_author' => 'tester', 'comment_author_email' => 'tester@example.com' ) ); if ( ! $cid ) { fwrite( STDERR, 'FAIL: could not create test comment' . PHP_EOL ); exit( 1 ); } update_comment_meta( $cid, '_trolltrap_filter', 'piglatin' ); $_REQUEST['_wpnonce'] = wp_create_nonce( 'bulk-comments' ); $tt = mahangu_Troll_Trap(); $tt->settings->handle_bulk_actions( '', 'untrap', array( $cid ) ); $result = get_comment_meta( $cid, '_trolltrap_filter', true ); if ( $result !== 'none' ) { fwrite( STDERR, 'FAIL: untrap did not clear filter, got: ' . var_export( $result, true ) . PHP_EOL ); exit( 1 ); } echo 'OK: untrap clears _trolltrap_filter to none' . PHP_EOL;"
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php require_once '/wordpress/wp-load.php'; wp_set_current_user( 1 ); $cid = wp_insert_comment( array( 'comment_post_ID' => 1, 'comment_content' => 'mark target', 'comment_author' => 'tester2', 'comment_author_email' => 'tester2@example.com' ) ); update_comment_meta( $cid, '_trolltrap_filter', 'none' ); $_REQUEST['_wpnonce'] = wp_create_nonce( 'bulk-comments' ); $tt = mahangu_Troll_Trap(); $tt->settings->handle_bulk_actions( '', 'mark_as_troll', array( $cid ) ); $result = get_comment_meta( $cid, '_trolltrap_filter', true ); if ( $result !== 'disemvowel' ) { fwrite( STDERR, 'FAIL: mark_as_troll did not set default filter (disemvowel), got: ' . var_export( $result, true ) . PHP_EOL ); exit( 1 ); } echo 'OK: mark_as_troll still applies default filter (regression check)' . PHP_EOL;"
     }
   ]
 }

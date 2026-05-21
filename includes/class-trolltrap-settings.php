@@ -141,15 +141,16 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 	}
 
 
-     public function register_bulk_actions($bulk_actions) {
-        $bulk_actions['mark_as_troll'] = __( 'Mark as Troll', 'mark_as_troll');
+     public function register_bulk_actions( $bulk_actions ) {
+        $bulk_actions['mark_as_troll'] = __( 'Mark as Troll', 'troll-trap' );
+        $bulk_actions['untrap']        = __( 'Untrap (clear filter)', 'troll-trap' );
         return $bulk_actions;
     }
 
 
     public function handle_bulk_actions( $redirect_to, $doaction, $comment_ids ) {
 
-        if ( $doaction !== 'mark_as_troll' ) {
+        if ( $doaction !== 'mark_as_troll' && $doaction !== 'untrap' ) {
             return $redirect_to;
         }
 
@@ -162,29 +163,56 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
         // any caller that invokes the filter directly.
         check_admin_referer( 'bulk-comments' );
 
-        $default_filter = esc_attr(get_option('trolltrap_default_filter', 'piglatin'));
+        if ( 'mark_as_troll' === $doaction ) {
 
+            $default_filter = get_option( 'trolltrap_default_filter', 'piglatin' );
 
-        foreach ( $comment_ids as $comment_id ) {
+            foreach ( $comment_ids as $comment_id ) {
+                update_comment_meta( $comment_id, '_trolltrap_filter', $default_filter );
+            }
 
-            update_comment_meta($comment_id, '_trolltrap_filter', $default_filter, '');
-
+            return add_query_arg( 'bulk_troll_comments', count( $comment_ids ), $redirect_to );
         }
 
-        $redirect_to = add_query_arg( 'bulk_troll_comments', count( $comment_ids ), $redirect_to );
-        return $redirect_to;
+        // 'untrap' — clear the filter on selected comments.
+        foreach ( $comment_ids as $comment_id ) {
+            update_comment_meta( $comment_id, '_trolltrap_filter', 'none' );
+        }
+
+        return add_query_arg( 'bulk_untrap_comments', count( $comment_ids ), $redirect_to );
     }
 
 
     public function handle_bulk_actions_notice() {
+
         if ( ! empty( $_REQUEST['bulk_troll_comments'] ) ) {
-            $marked_comments = intval( $_REQUEST['bulk_troll_comments'] );
-            printf( '<div id="message" class="updated fade">' .
-                _n( 'Marked %s comment as Troll.',
-                    'Marked %s comments as Troll.',
-                    $marked_comments,
-                    'mark-as_troll'
-                ) . '</div>', $marked_comments );
+            $count = intval( $_REQUEST['bulk_troll_comments'] );
+            printf(
+                '<div id="message" class="updated fade"><p>' . esc_html(
+                    _n(
+                        'Marked %s comment as Troll.',
+                        'Marked %s comments as Troll.',
+                        $count,
+                        'troll-trap'
+                    )
+                ) . '</p></div>',
+                esc_html( number_format_i18n( $count ) )
+            );
+        }
+
+        if ( ! empty( $_REQUEST['bulk_untrap_comments'] ) ) {
+            $count = intval( $_REQUEST['bulk_untrap_comments'] );
+            printf(
+                '<div id="message" class="updated fade"><p>' . esc_html(
+                    _n(
+                        'Untrapped %s comment.',
+                        'Untrapped %s comments.',
+                        $count,
+                        'troll-trap'
+                    )
+                ) . '</p></div>',
+                esc_html( number_format_i18n( $count ) )
+            );
         }
     }
 
