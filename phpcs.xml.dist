@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<ruleset name="Troll Trap">
+    <description>WordPress Coding Standards for the Troll Trap plugin.</description>
+
+    <file>.</file>
+
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/.github/*</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+    <arg name="basepath" value="."/>
+    <arg name="colors"/>
+    <arg name="parallel" value="4"/>
+    <arg value="ps"/>
+
+    <config name="minimum_supported_wp_version" value="6.5"/>
+    <config name="testVersion" value="8.0-"/>
+
+    <rule ref="WordPress-Core"/>
+    <rule ref="WordPress-Extra"/>
+    <rule ref="WordPress.Security"/>
+
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="troll-trap"/>
+            </property>
+        </properties>
+    </rule>
+
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="trolltrap"/>
+                <element value="mahangu_Troll_Trap"/>
+                <element value="_trolltrap"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Pre-existing style noise we don't want to block CI on. Track separately. -->
+    <rule ref="WordPress.Files.FileName">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Squiz.Commenting.FunctionComment">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Squiz.Commenting.FileComment">
+        <severity>0</severity>
+    </rule>
+    <rule ref="Generic.WhiteSpace.DisallowSpaceIndent">
+        <severity>0</severity>
+    </rule>
+</ruleset>
