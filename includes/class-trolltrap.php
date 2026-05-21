@@ -15,23 +15,22 @@ class mahangu_Troll_Trap
 	// <select> boxes etc.
 
 	public $filters = array(
-		array (
-			slug => "piglatin",
-			name => "Piglatin"
+		array(
+			'slug' => 'piglatin',
+			'name' => 'Piglatin',
 		),
-		array (
-			slug => "reverse",
-			name => "Reverse Words"
+		array(
+			'slug' => 'reverse',
+			'name' => 'Reverse Words',
 		),
-		array (
-			slug => "disemvowel",
-			name => "Disemvowel"
+		array(
+			'slug' => 'disemvowel',
+			'name' => 'Disemvowel',
 		),
-		array (
-			slug => "none",
-			name => "None"
+		array(
+			'slug' => 'none',
+			'name' => 'None',
 		),
-
 	);
 
 
