@@ -23,7 +23,8 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
         add_action( 'admin_notices', array ($this, 'handle_bulk_actions_notice') );
 
-
+        // POST endpoint for per-comment filter changes (replaces in-place GET handling).
+        add_action( 'admin_post_trolltrap_set_filter', array( $this, 'handle_set_filter' ) );
 
     }
 
@@ -198,55 +199,19 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 	public function admin_column_output($colname, $comment_id) {
 
-		$paged = isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 0;
-
-		$p     = isset( $_GET['p'] )     ? absint( $_GET['p'] )     : 0;
-
-		$retrieved_nonce = $_GET['_ttnonce'];
-
-		if (
-			isset($_GET["trolltrap"]) && isset($_GET["comment_id"])
-			&& current_user_can( 'moderate_comments' )
-			&& wp_verify_nonce($retrieved_nonce, '_ttnonce' )
-		) {
-
-			$update_id = $_GET["comment_id"];
-
-			$comment_filter = $_GET["trolltrap"];
-
-			if (isset($comment_filter)) {
-
-				delete_comment_meta($update_id, '_trolltrap_filter');
-			}
-
-			switch ($comment_filter) {
-
-				case "piglatin":
-					update_comment_meta($update_id, '_trolltrap_filter', 'piglatin', true);
-					break;
-
-				case "reverse":
-					update_comment_meta($update_id, '_trolltrap_filter', 'reverse', true);
-					break;
-
-				case "disemvowel":
-					update_comment_meta($update_id, '_trolltrap_filter', 'disemvowel', true);
-					break;
-
-				case "none":
-					update_comment_meta($update_id, '_trolltrap_filter', 'none', true);
-					break;
-			}
-		}
-
 		$comment_meta = get_comment_meta($comment_id, '_trolltrap_filter', true);
 
+		$paged = isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 0;
+		$p     = isset( $_GET['p'] )     ? absint( $_GET['p'] )     : 0;
 
 		printf(
-			'<form name="trolltrap" method="GET" action="%1$s">',
-			admin_url('edit-comments.php')
-
+			'<form name="trolltrap" method="POST" action="%1$s">',
+			esc_url( admin_url( 'admin-post.php' ) )
 		);
+
+		print '<input type="hidden" name="action" value="trolltrap_set_filter">';
+
+		wp_nonce_field( 'trolltrap_set_filter_' . $comment_id );
 
 		if ($comment_meta != "none") {
 
@@ -271,7 +236,7 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 			} else {
 
 				printf(
-					'<option value="%1$s"">%2$s</option>',
+					'<option value="%1$s">%2$s</option>',
 					$filter["slug"], $filter["name"]
 
 				);
@@ -282,20 +247,10 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 		print ("</select>");
 
-		$set_nonce = wp_create_nonce('_ttnonce');
-
 		printf(
-
-			'<input type="hidden" name="_ttnonce" value="%1$s">',
-			$set_nonce
+			'<input type="hidden" name="comment_id" value="%d">',
+			(int) $comment_id
 		);
-
-
-		printf(
-			'<input type="hidden" name="comment_id" value="%1$s">',
-			$comment_id
-		);
-
 
 		printf(
 			'<input type="hidden" name="paged" value="%d">',
@@ -309,6 +264,48 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 
 		print ("</form>");
+
+	}
+
+
+	/**
+	 * Handler for the admin-post.php endpoint that updates the per-comment
+	 * filter. Replaces the previous GET-form handling inside
+	 * admin_column_output() — GET leaked the nonce into URL bar, history,
+	 * and the Referer header, and the action verb '_ttnonce' was not
+	 * bound to a specific comment.
+	 */
+	public function handle_set_filter() {
+
+		if ( ! current_user_can( 'moderate_comments' ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'troll-trap' ), 403 );
+		}
+
+		$comment_id = isset( $_POST['comment_id'] ) ? absint( $_POST['comment_id'] ) : 0;
+		if ( ! $comment_id || ! get_comment( $comment_id ) ) {
+			wp_die( esc_html__( 'Invalid comment.', 'troll-trap' ), 400 );
+		}
+
+		check_admin_referer( 'trolltrap_set_filter_' . $comment_id );
+
+		$allowed = wp_list_pluck( $this->filters, 'slug' );
+		$raw     = isset( $_POST['trolltrap'] ) ? sanitize_key( wp_unslash( $_POST['trolltrap'] ) ) : '';
+		$filter  = in_array( $raw, $allowed, true ) ? $raw : 'none';
+
+		update_comment_meta( $comment_id, '_trolltrap_filter', $filter );
+
+		$redirect = admin_url( 'edit-comments.php' );
+		$paged    = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 0;
+		$p        = isset( $_POST['p'] )     ? absint( $_POST['p'] )     : 0;
+		if ( $paged ) {
+			$redirect = add_query_arg( 'paged', $paged, $redirect );
+		}
+		if ( $p ) {
+			$redirect = add_query_arg( 'p', $p, $redirect );
+		}
+
+		wp_safe_redirect( $redirect );
+		exit;
 
 	}
 
