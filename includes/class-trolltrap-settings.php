@@ -179,9 +179,9 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 	public function admin_column_output($colname, $comment_id) {
 
-		$paged = $_GET["paged"]; // Need to use get_query_vars() instead
+		$paged = isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 0;
 
-		$p = $_GET["p"]; // Need to use get_query_vars() instead
+		$p     = isset( $_GET['p'] )     ? absint( $_GET['p'] )     : 0;
 
 		$retrieved_nonce = $_GET['_ttnonce'];
 
@@ -275,12 +275,12 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 
 		printf(
-			'<input type="hidden" name="paged" value="%1$s">',
+			'<input type="hidden" name="paged" value="%d">',
 			$paged
 		);
 
 		printf(
-			'<input type="hidden" name="p" value="%1$s">',
+			'<input type="hidden" name="p" value="%d">',
 			$p
 		);
 
