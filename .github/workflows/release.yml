@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Verify tag matches plugin header version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          HEADER_VERSION=$(grep -oP 'Version:\s*\K[0-9][0-9A-Za-z.\-]*' index.php | head -n1)
+          README_STABLE=$(grep -oP 'Stable tag:\s*\K[0-9][0-9A-Za-z.\-]*' readme.txt | head -n1)
+          echo "Tag: $TAG | index.php: $HEADER_VERSION | readme.txt: $README_STABLE"
+          if [ "$TAG" != "$HEADER_VERSION" ]; then
+            echo "::error::Tag ($TAG) does not match index.php Version ($HEADER_VERSION)"
+            exit 1
+          fi
+          if [ "$TAG" != "$README_STABLE" ]; then
+            echo "::error::Tag ($TAG) does not match readme.txt Stable tag ($README_STABLE)"
+            exit 1
+          fi
+
+      - name: Lint all PHP files
+        run: |
+          find . -type f -name '*.php' \
+            -not -path './vendor/*' \
+            -not -path './build/*' \
+            -print0 \
+          | xargs -0 -n1 -P4 php -l
+
+      - name: Build plugin zip
+        run: |
+          PLUGIN_SLUG=trolltrap
+          mkdir -p "build/${PLUGIN_SLUG}"
+          rsync -a --exclude='.git' --exclude-from='.distignore' \
+            --exclude="build" ./ "build/${PLUGIN_SLUG}/"
+          ( cd build && zip -r "${PLUGIN_SLUG}.zip" "${PLUGIN_SLUG}" )
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/trolltrap.zip
+          generate_release_notes: true
