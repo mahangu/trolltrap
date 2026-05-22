@@ -8,52 +8,76 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Mahangu_Troll_Trap_Convert {
 
-	public function pig_latin( $text ) {
+	/**
+	 * Apply a per-word transformation while preserving every whitespace run
+	 * (spaces, tabs, newlines) exactly as it appeared in the input.
+	 *
+	 * @param string   $text      The text to transform.
+	 * @param callable $transform Receives a single word, returns its replacement.
+	 * @return string
+	 */
+	private function map_words( $text, callable $transform ) {
 
-		$words = explode( ' ', $text );
+		$tokens = preg_split( '/(\s+)/u', (string) $text, -1, PREG_SPLIT_DELIM_CAPTURE );
 
-		$converted_text = '';
-
-		foreach ( $words as $word ) {
-
-			if ( preg_match( '/a|e|i|o|u/i', $word[0] ) ) {
-
-				$pig_latin_word = $word . 'way';
-
-			} else {
-
-				$split_word = preg_split( '/([^aeiouy])/i', $word, 2, PREG_SPLIT_DELIM_CAPTURE );
-
-				$pig_latin_word = $split_word[2] . $split_word[1] . 'ay';
-
-			}
-
-			$converted_text = $converted_text . ' ' . $pig_latin_word;
+		if ( false === $tokens || null === $tokens ) {
+			return (string) $text;
 		}
 
-		return $converted_text;
+		foreach ( $tokens as $i => $token ) {
+			// Even indices are words; odd indices are the captured whitespace runs.
+			if ( 0 === $i % 2 && '' !== $token ) {
+				$tokens[ $i ] = $transform( $token );
+			}
+		}
+
+		return implode( '', $tokens );
+	}
+
+	public function pig_latin( $text ) {
+
+		return $this->map_words(
+			$text,
+			function ( $word ) {
+
+				$first = mb_substr( $word, 0, 1 );
+
+				if ( '' === $first ) {
+					return $word;
+				}
+
+				// A word that begins with a vowel just takes a 'way' suffix.
+				if ( preg_match( '/[aeiou]/iu', $first ) ) {
+					return $word . 'way';
+				}
+
+				// Otherwise move the leading consonant cluster to the end.
+				if ( preg_match( '/^([^aeiou]+)(.+)$/iu', $word, $matches ) ) {
+					return $matches[2] . $matches[1] . 'ay';
+				}
+
+				// A token with no vowel at all: nothing to move.
+				return $word . 'ay';
+			}
+		);
 	}
 
 	public function reverse( $text ) {
 
-		$words = explode( ' ', $text );
-
-		$converted_text = '';
-
-		foreach ( $words as $word ) {
-
-			$reversed_word = strrev( $word );
-
-			$converted_text = $converted_text . ' ' . $reversed_word;
-		}
-
-		return $converted_text;
+		return $this->map_words(
+			$text,
+			function ( $word ) {
+				return implode( '', array_reverse( mb_str_split( $word ) ) );
+			}
+		);
 	}
 
 	public function disemvowel( $text ) {
 
-		$words = str_replace( array( 'a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U' ), '', $text );
-
-		return $words;
+		return str_replace(
+			array( 'a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U' ),
+			'',
+			(string) $text
+		);
 	}
 }
