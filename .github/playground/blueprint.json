@@ -36,6 +36,10 @@
     {
       "step": "runPHP",
       "code": "<?php require_once '/wordpress/wp-load.php'; $c = mahangu_troll_trap()->convert; $rev = $c->reverse( 'héllo wörld' ); if ( ! mb_check_encoding( $rev, 'UTF-8' ) ) { fwrite( STDERR, 'FAIL: reverse produced invalid UTF-8' . PHP_EOL ); exit( 1 ); } if ( $rev !== 'olléh dlröw' ) { fwrite( STDERR, 'FAIL: multibyte reverse wrong, got: ' . $rev . PHP_EOL ); exit( 1 ); } $multi = $c->pig_latin( 'line one' . PHP_EOL . 'line two' ); if ( strpos( $multi, PHP_EOL ) === false ) { fwrite( STDERR, 'FAIL: pig_latin collapsed the newline' . PHP_EOL ); exit( 1 ); } echo 'OK: converters are multibyte- and whitespace-safe' . PHP_EOL;"
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php require_once '/wordpress/wp-load.php'; $reg = mahangu_troll_trap()->filters; if ( ! ( $reg instanceof Mahangu_Troll_Trap_Filters ) ) { fwrite( STDERR, 'FAIL: filter registry not available' . PHP_EOL ); exit( 1 ); } if ( $reg->apply( 'disemvowel', 'Hello World' ) !== 'Hll Wrld' ) { fwrite( STDERR, 'FAIL: registry apply(disemvowel) wrong' . PHP_EOL ); exit( 1 ); } if ( $reg->apply( 'none', 'Hello World' ) !== 'Hello World' ) { fwrite( STDERR, 'FAIL: registry apply(none) should be identity' . PHP_EOL ); exit( 1 ); } if ( $reg->apply( 'bogus-slug', 'Hello World' ) !== 'Hello World' ) { fwrite( STDERR, 'FAIL: registry apply(unknown) should be identity' . PHP_EOL ); exit( 1 ); } if ( in_array( 'none', array_keys( $reg->transforming() ), true ) ) { fwrite( STDERR, 'FAIL: transforming() must exclude none' . PHP_EOL ); exit( 1 ); } if ( count( $reg->slugs() ) < 4 ) { fwrite( STDERR, 'FAIL: expected at least 4 registered filters' . PHP_EOL ); exit( 1 ); } echo 'OK: filter registry registered and dispatching' . PHP_EOL;"
     }
   ]
 }
