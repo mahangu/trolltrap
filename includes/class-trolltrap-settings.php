@@ -34,7 +34,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 		add_settings_section(
 			'trolltrap',
-			'Troll Trap',
+			__( 'Troll Trap', 'troll-trap' ),
 			array( $this, 'settings_description' ),
 			'discussion'
 		);
@@ -47,7 +47,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 		add_settings_field(
 			'trolltrap_words',
-			'Comment Graylist',
+			__( 'Comment Graylist', 'troll-trap' ),
 			array( $this, 'settings_form_words' ),
 			'discussion',
 			'trolltrap'
@@ -61,7 +61,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 		add_settings_field(
 			'trolltrap_default_filter',
-			'Default Filter',
+			__( 'Default Filter', 'troll-trap' ),
 			array( $this, 'settings_form_default_filter' ),
 			'discussion',
 			'trolltrap'
@@ -71,7 +71,10 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 	public function settings_description() {
 
-		print '<p class="description">Options for the Troll Trap plugin.</p>';
+		printf(
+			'<p class="description">%s</p>',
+			esc_html__( 'Options for the Troll Trap plugin.', 'troll-trap' )
+		);
 	}
 
 
@@ -86,7 +89,10 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 	public function settings_form_words() {
 
-		print '<p><label for="trolltrap_words">When a comment contains any of these words in its content, name, URL, email, or IP, the default Troll Trap filter will be applied to it. One word or IP per line. It will match inside words, so “press” will match “WordPress”.</label></p>';
+		printf(
+			'<p><label for="trolltrap_words">%s</label></p>',
+			esc_html__( 'When a comment contains any of these words in its content, author name, URL, email, IP address, or user agent, the default Troll Trap filter will be applied to it. One word or IP per line. It matches inside words, so “press” will match “WordPress”.', 'troll-trap' )
+		);
 
 		printf(
 			'<textarea name="trolltrap_words" rows="10" cols="50" class="large-text code">%s</textarea>',
@@ -100,8 +106,8 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 		$stored_filter = esc_attr( get_option( 'trolltrap_default_filter' ) );
 
 		printf(
-			'<p><label for="trolltrap_default_filter">Choose which filter will be applied to comments by default. The filter for individual comments can be edited via the <a href="%1$s">comment moderation interface</a>.</label></p>',
-			esc_url( admin_url( 'edit-comments.php' ) )
+			'<p><label for="trolltrap_default_filter">%s</label></p>',
+			esc_html__( 'Choose which filter is applied to comments by default. You can change the filter for an individual comment from the Comments screen.', 'troll-trap' )
 		);
 
 		print '<select name="trolltrap_default_filter" id="trolltrap_default_filter" style="display: block;">';
@@ -162,7 +168,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 			}
 
 			foreach ( $comment_ids as $comment_id ) {
-				update_comment_meta( $comment_id, '_trolltrap_filter', $default_filter );
+				update_comment_meta( absint( $comment_id ), '_trolltrap_filter', $default_filter );
 			}
 
 			return add_query_arg( 'bulk_troll_comments', count( $comment_ids ), $redirect_to );
@@ -170,7 +176,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 		// 'untrap' — clear the filter on selected comments.
 		foreach ( $comment_ids as $comment_id ) {
-			update_comment_meta( $comment_id, '_trolltrap_filter', 'none' );
+			update_comment_meta( absint( $comment_id ), '_trolltrap_filter', 'none' );
 		}
 
 		return add_query_arg( 'bulk_untrap_comments', count( $comment_ids ), $redirect_to );
@@ -224,7 +230,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 	public function admin_column_setup( $columns ) {
 
-		$columns['trolltrap'] = 'Troll Trap Filter';
+		$columns['trolltrap'] = __( 'Troll Trap Filter', 'troll-trap' );
 		return $columns;
 	}
 
@@ -249,11 +255,11 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 		if ( 'none' !== $comment_meta ) {
 
-			print '<select onchange="this.form.submit()" name="trolltrap" id="trolltrap" style="display: block; border: 1px solid red;">';
+			print '<select onchange="this.form.submit()" name="trolltrap" style="display: block; border: 1px solid red;">';
 
 		} else {
 
-			print '<select onchange="this.form.submit()" name="trolltrap" id="trolltrap" style="display: block;">';
+			print '<select onchange="this.form.submit()" name="trolltrap" style="display: block;">';
 
 		}
 

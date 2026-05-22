@@ -4,7 +4,7 @@
   "steps": [
     {
       "step": "activatePlugin",
-      "pluginPath": "/wordpress/wp-content/plugins/trolltrap/index.php"
+      "pluginPath": "/wordpress/wp-content/plugins/troll-trap/index.php"
     },
     {
       "step": "setSiteOptions",
