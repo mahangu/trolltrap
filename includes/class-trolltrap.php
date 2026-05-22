@@ -4,8 +4,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require 'class-trolltrap-settings.php';
+require 'class-trolltrap-filters.php';
 require 'class-trolltrap-convert.php';
+require 'class-trolltrap-settings.php';
 
 
 class Mahangu_Troll_Trap {
@@ -17,28 +18,12 @@ class Mahangu_Troll_Trap {
 
 	public $convert;
 
-	// Main array of comment filters that we use in all sub classes to generate
-	// <select> boxes etc.
-
-	public $filters = array(
-		array(
-			'slug' => 'piglatin',
-			'name' => 'Piglatin',
-		),
-		array(
-			'slug' => 'reverse',
-			'name' => 'Reverse Words',
-		),
-		array(
-			'slug' => 'disemvowel',
-			'name' => 'Disemvowel',
-		),
-		array(
-			'slug' => 'none',
-			'name' => 'None',
-		),
-	);
-
+	/**
+	 * The filter registry.
+	 *
+	 * @var Mahangu_Troll_Trap_Filters
+	 */
+	public $filters;
 
 
 	public function __construct() {
@@ -62,10 +47,35 @@ class Mahangu_Troll_Trap {
 
 	public function initialize_global_objects() {
 
-		$this->settings = new Mahangu_Troll_Trap_Settings(); // Settings->Discussion and Comments panel setup class.
-
 		$this->convert = new Mahangu_Troll_Trap_Convert(); // Text manipulation class.
+
+		$this->filters = new Mahangu_Troll_Trap_Filters(); // Filter registry.
+		$this->register_default_filters();
+
+		/**
+		 * Fires after the built-in filters are registered, so third-party code
+		 * can add its own.
+		 *
+		 * @since 1.0.0
+		 * @param Mahangu_Troll_Trap_Filters $filters The filter registry.
+		 */
+		do_action( 'trolltrap_register_filters', $this->filters );
+
+		$this->settings = new Mahangu_Troll_Trap_Settings( $this->filters ); // Settings + Comments panel.
 	}
+
+
+	/**
+	 * Register the filters that ship with the plugin.
+	 */
+	private function register_default_filters() {
+
+		$this->filters->register( 'piglatin', __( 'Piglatin', 'troll-trap' ), array( $this->convert, 'pig_latin' ), 1 );
+		$this->filters->register( 'reverse', __( 'Reverse Words', 'troll-trap' ), array( $this->convert, 'reverse' ), 2 );
+		$this->filters->register( 'disemvowel', __( 'Disemvowel', 'troll-trap' ), array( $this->convert, 'disemvowel' ), 3 );
+		$this->filters->register( 'none', __( 'None', 'troll-trap' ), null, 0 );
+	}
+
 
 	/**
 	 * Tag a newly posted comment if it matches the Comment Graylist.
@@ -144,20 +154,6 @@ class Mahangu_Troll_Trap {
 
 		$comment_filter = get_comment_meta( $comment_id, '_trolltrap_filter', true );
 
-		switch ( $comment_filter ) {
-
-			case 'piglatin':
-				return $this->convert->pig_latin( $content );
-
-			case 'reverse':
-				return $this->convert->reverse( $content );
-
-			case 'disemvowel':
-				return $this->convert->disemvowel( $content );
-
-			default:
-				return $content;
-
-		}
+		return $this->filters->apply( $comment_filter, $content );
 	}
 }

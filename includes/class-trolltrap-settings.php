@@ -6,11 +6,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Settings->Discussion and Comments panel setup class.
 
-class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
+class Mahangu_Troll_Trap_Settings {
+
+	/**
+	 * The filter registry.
+	 *
+	 * @var Mahangu_Troll_Trap_Filters
+	 */
+	private $filters;
 
 
+	public function __construct( $filters ) {
 
-	public function __construct() {
+		$this->filters = $filters;
 
 		// Register and render settings on Settings > Discussion page.
 		add_action( 'admin_init', array( $this, 'settings_register' ) );
@@ -80,8 +88,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 	public function sanitize_default_filter( $value ) {
 
-		$allowed = wp_list_pluck( $this->filters, 'slug' );
-		$allowed = array_diff( $allowed, array( 'none' ) ); // 'none' is not a valid default.
+		$allowed = array_keys( $this->filters->transforming() );
 
 		return in_array( $value, $allowed, true ) ? $value : 'piglatin';
 	}
@@ -112,7 +119,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 		print '<select name="trolltrap_default_filter" id="trolltrap_default_filter" style="display: block;">';
 
-		foreach ( $this->filters as $filter ) {
+		foreach ( $this->filters->transforming() as $filter ) {
 
 			if ( $filter['slug'] === $stored_filter ) {
 
@@ -122,7 +129,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 					esc_html( $filter['name'] )
 				);
 
-			} elseif ( 'none' !== $filter['slug'] ) { // 'None' cannot be a default filter, because it does nothing.
+			} else {
 
 				printf(
 					'<option value="%1$s">%2$s</option>',
@@ -162,7 +169,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 		if ( 'mark_as_troll' === $doaction ) {
 
 			$default_filter = get_option( 'trolltrap_default_filter', 'piglatin' );
-			$allowed        = wp_list_pluck( $this->filters, 'slug' );
+			$allowed        = array_keys( $this->filters->transforming() );
 			if ( ! in_array( $default_filter, $allowed, true ) ) {
 				$default_filter = 'piglatin';
 			}
@@ -263,7 +270,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 		}
 
-		foreach ( $this->filters as $filter ) {
+		foreach ( $this->filters->all() as $filter ) {
 
 			if ( $filter['slug'] === $comment_meta ) {
 
@@ -325,7 +332,7 @@ class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 		check_admin_referer( 'trolltrap_set_filter_' . $comment_id );
 
-		$allowed = wp_list_pluck( $this->filters, 'slug' );
+		$allowed = $this->filters->slugs();
 		$raw     = isset( $_POST['trolltrap'] ) ? sanitize_key( wp_unslash( $_POST['trolltrap'] ) ) : '';
 		$filter  = in_array( $raw, $allowed, true ) ? $raw : 'none';
 
