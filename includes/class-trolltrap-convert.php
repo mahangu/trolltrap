@@ -52,6 +52,7 @@ class Mahangu_Troll_Trap_Convert {
 				}
 
 				// Otherwise move the leading consonant cluster to the end.
+				// 'y' counts as a consonant throughout (e.g. "myth" -> "hmytay").
 				if ( preg_match( '/^([^aeiou]+)(.+)$/iu', $word, $matches ) ) {
 					return $matches[2] . $matches[1] . 'ay';
 				}
