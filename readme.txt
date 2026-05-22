@@ -18,7 +18,7 @@ Instead of deleting or hiding a troll's comment, Troll Trap transforms its text 
 
 = Two ways to use it =
 
-1. **Keyword graylist (automatic).** Maintain a list of keywords under Settings &gt; Discussion &gt; Troll Trap. When an incoming comment matches a keyword in its content, author name, URL, email, or IP, the default Troll Trap filter is applied to it automatically. The graylist works like WordPress' built-in disallowed-comment list, but obfuscates instead of blocks.
+1. **Keyword graylist (automatic).** Maintain a list of keywords under Settings &gt; Discussion &gt; Troll Trap. When an incoming comment matches a keyword in its content, author name, URL, email, IP address, or user agent, the default Troll Trap filter is applied to it automatically. The graylist works like WordPress' built-in disallowed-comment list, but obfuscates instead of blocks.
 
 2. **Manual filters (per comment).** From the Comments admin screen you can apply a filter to any individual comment, or use the **Mark as Troll** and **Untrap** bulk actions to filter or clear many comments at once.
 
