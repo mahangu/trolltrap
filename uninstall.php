@@ -18,9 +18,12 @@ function trolltrap_uninstall_site() {
 
 	delete_option( 'trolltrap_words' );
 	delete_option( 'trolltrap_default_filter' );
+	delete_option( 'trolltrap_graduated_enabled' );
+	delete_option( 'trolltrap_severity_ladder' );
 
-	// Remove '_trolltrap_filter' meta from every comment ($delete_all = true).
+	// Remove the plugin's comment meta from every comment ($delete_all = true).
 	delete_metadata( 'comment', 0, '_trolltrap_filter', '', true );
+	delete_metadata( 'comment', 0, '_trolltrap_match_count', '', true );
 }
 
 /**

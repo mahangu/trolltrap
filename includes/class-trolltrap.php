@@ -83,6 +83,21 @@ class Mahangu_Troll_Trap {
 
 
 	/**
+	 * The default graduated-severity ladder: keyword-match count to filter slug.
+	 *
+	 * @return array<int,string>
+	 */
+	public static function default_severity_ladder() {
+
+		return array(
+			1 => 'piglatin',
+			2 => 'reverse',
+			3 => 'disemvowel',
+		);
+	}
+
+
+	/**
 	 * Tag a newly posted comment if it matches the Comment Graylist.
 	 *
 	 * Hooks into 'comment_post' and fires whenever a new comment is posted.
@@ -92,30 +107,25 @@ class Mahangu_Troll_Trap {
 	 */
 	public function comments_tag( $comment_id ) {
 
-		$default_filter = get_option( 'trolltrap_default_filter', 'piglatin' );
-		$applied        = 'none';
-
-		$comment = get_comment( $comment_id );
-
-		// Keyword matching mirrors WordPress' own wp_check_comment_disallowed_list().
-
+		$comment  = get_comment( $comment_id );
 		$mod_keys = trim( get_option( 'trolltrap_words', '' ) );
+		$words    = explode( "\n", $mod_keys );
 
-		$words = explode( "\n", $mod_keys );
+		// Count how many distinct graylist keywords the comment matches.
+		// Keyword matching mirrors WordPress' own wp_check_comment_disallowed_list().
+		$match_count = 0;
 
 		foreach ( (array) $words as $word ) {
 			$word = trim( $word );
 
-			// Skip empty lines
-			if ( empty( $word ) ) {
+			// Skip empty lines.
+			if ( '' === $word ) {
 				continue;
 			}
 
-			// Do some escaping magic so that '#' chars in the
-			// spam words don't break things:
-			$word = preg_quote( $word, '#' );
+			// Escape so a '#' in the keyword cannot break the pattern delimiter.
+			$pattern = '#' . preg_quote( $word, '#' ) . '#i';
 
-			$pattern = "#$word#i";
 			if (
 				preg_match( $pattern, $comment->comment_author )
 				|| preg_match( $pattern, $comment->comment_author_email )
@@ -124,14 +134,44 @@ class Mahangu_Troll_Trap {
 				|| preg_match( $pattern, $comment->comment_author_IP )
 				|| preg_match( $pattern, $comment->comment_agent )
 			) {
-
-				$applied = $default_filter;
-				break;
-
+				++$match_count;
 			}
 		}
 
-		update_comment_meta( $comment_id, '_trolltrap_filter', $applied );
+		update_comment_meta( $comment_id, '_trolltrap_filter', $this->resolve_filter( $match_count ) );
+		update_comment_meta( $comment_id, '_trolltrap_match_count', $match_count );
+	}
+
+
+	/**
+	 * Decide which filter a comment receives, given how many distinct graylist
+	 * keywords it matched.
+	 *
+	 * With graduated severity disabled, any match applies the single default
+	 * filter. With it enabled, the configured ladder maps the match count to a
+	 * filter (the third rung covers "3 or more").
+	 *
+	 * @since 1.0.0
+	 * @param int $match_count Number of graylist keywords the comment matched.
+	 * @return string The filter slug to apply.
+	 */
+	private function resolve_filter( $match_count ) {
+
+		if ( $match_count < 1 ) {
+			return 'none';
+		}
+
+		if ( '1' === (string) get_option( 'trolltrap_graduated_enabled', '0' ) ) {
+
+			$ladder = get_option( 'trolltrap_severity_ladder', self::default_severity_ladder() );
+			$rung   = min( $match_count, 3 );
+
+			if ( is_array( $ladder ) && isset( $ladder[ $rung ] ) && $this->filters->has( $ladder[ $rung ] ) ) {
+				return $ladder[ $rung ];
+			}
+		}
+
+		return get_option( 'trolltrap_default_filter', 'piglatin' );
 	}
 
 
