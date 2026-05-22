@@ -12,7 +12,7 @@ The Comment Graylist under **Settings > Discussion > Troll Trap** works like Wor
 
 ![Troll Trap settings under Settings > Discussion](https://cloud.githubusercontent.com/assets/10125810/13197648/249b0aac-d81a-11e5-9264-62572a267195.png?raw=true)
 
-Each matched comment is transformed by one of eight built-in filters — pig latin, leetspeak, mocking case, uwu, reversed, ROT13, disemvowelled, or zalgo. Developers can register their own.
+Each matched comment is transformed by one of eight built-in filters — pig latin, leetspeak, mocking case, uwu, reversed, ROT13, disemvowelled, or zalgo. Developers can register their own. An optional **AI Rewrite** filter can rewrite a comment in any style you describe (Klingon, Shakespearean, …) via the Anthropic API — opt-in, bring-your-own API key.
 
 ![A filtered comment as readers see it](https://cloud.githubusercontent.com/assets/10125810/13197644/fc189ee6-d819-11e5-927f-0cc75da4e3eb.png?raw=true)
 
