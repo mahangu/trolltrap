@@ -20,10 +20,19 @@ function trolltrap_uninstall_site() {
 	delete_option( 'trolltrap_default_filter' );
 	delete_option( 'trolltrap_graduated_enabled' );
 	delete_option( 'trolltrap_severity_ladder' );
+	delete_option( 'trolltrap_ai_enabled' );
+	delete_option( 'trolltrap_ai_key' );
+	delete_option( 'trolltrap_ai_model' );
+	delete_option( 'trolltrap_ai_style' );
+	delete_option( 'trolltrap_ai_fallback' );
 
 	// Remove the plugin's comment meta from every comment ($delete_all = true).
 	delete_metadata( 'comment', 0, '_trolltrap_filter', '', true );
 	delete_metadata( 'comment', 0, '_trolltrap_match_count', '', true );
+	delete_metadata( 'comment', 0, '_trolltrap_llm_text', '', true );
+
+	// Drop any queued AI rewrite jobs.
+	wp_clear_scheduled_hook( 'trolltrap_ai_transform' );
 }
 
 /**

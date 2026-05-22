@@ -6,6 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require 'class-trolltrap-filters.php';
 require 'class-trolltrap-convert.php';
+require 'class-trolltrap-ai.php';
 require 'class-trolltrap-settings.php';
 
 
@@ -24,6 +25,13 @@ class Mahangu_Troll_Trap {
 	 * @var Mahangu_Troll_Trap_Filters
 	 */
 	public $filters;
+
+	/**
+	 * The optional AI rewriting feature.
+	 *
+	 * @var Mahangu_Troll_Trap_AI
+	 */
+	public $ai;
 
 
 	public function __construct() {
@@ -51,6 +59,9 @@ class Mahangu_Troll_Trap {
 
 		$this->filters = new Mahangu_Troll_Trap_Filters(); // Filter registry.
 		$this->register_default_filters();
+
+		$this->ai = new Mahangu_Troll_Trap_AI( $this->filters ); // Optional AI rewriting.
+		$this->ai->register_filter( $this->filters );
 
 		/**
 		 * Fires after the built-in filters are registered, so third-party code
@@ -198,6 +209,16 @@ class Mahangu_Troll_Trap {
 		$comment_id = $comment instanceof WP_Comment ? $comment->comment_ID : get_comment_ID();
 
 		$comment_filter = get_comment_meta( $comment_id, '_trolltrap_filter', true );
+
+		// The AI filter serves a cached rewrite; while that is still pending
+		// (or if the request failed) it falls back to an algorithmic filter.
+		if ( 'llm' === $comment_filter ) {
+			$rewritten = $this->ai->cached_text( $comment_id );
+			if ( null !== $rewritten ) {
+				return $rewritten;
+			}
+			return $this->filters->apply( $this->ai->fallback_slug(), $content );
+		}
 
 		return $this->filters->apply( $comment_filter, $content );
 	}

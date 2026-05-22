@@ -49,7 +49,7 @@ No. Troll Trap never deletes or hides comments. It transforms the displayed text
 
 = Does it send my comments anywhere? =
 
-No. All filtering happens on your own server. Troll Trap makes no external network requests.
+Not by default. The eight built-in filters run entirely on your own server. The optional AI Rewrite feature is the one exception: when you enable it and supply an Anthropic API key, the content of a comment assigned the AI filter is sent to the Anthropic API (api.anthropic.com) to be rewritten, and usage is billed to your Anthropic account. AI Rewrite is off unless you turn it on.
 
 = Who can apply or clear filters? =
 
@@ -71,3 +71,4 @@ Only users who can moderate comments (Editors and Administrators by default).
 * Eight built-in filters: Piglatin, Leetspeak, Mocking Case, uwu, Reverse Words, ROT13, Disemvowel and Zalgo — each multibyte- and whitespace-safe.
 * A filter registry with a trolltrap_register_filters action for registering custom filters.
 * Optional graduated severity: escalate the filter by how many graylist keywords a comment matches.
+* Optional AI Rewrite filter: rewrites a trapped comment in a configurable style (Klingon, Shakespearean, ...) via the Anthropic API — opt-in, bring-your-own API key.
