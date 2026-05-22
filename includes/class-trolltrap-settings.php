@@ -172,7 +172,7 @@ class Mahangu_Troll_Trap_Settings {
 
 	public function settings_form_default_filter() {
 
-		$stored_filter = esc_attr( get_option( 'trolltrap_default_filter' ) );
+		$stored_filter = esc_attr( get_option( 'trolltrap_default_filter', 'piglatin' ) );
 
 		printf(
 			'<p><label for="trolltrap_default_filter">%s</label></p>',
