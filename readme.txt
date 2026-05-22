@@ -70,3 +70,4 @@ Only users who can moderate comments (Editors and Administrators by default).
 * Mark as Troll and Untrap bulk actions.
 * Eight built-in filters: Piglatin, Leetspeak, Mocking Case, uwu, Reverse Words, ROT13, Disemvowel and Zalgo — each multibyte- and whitespace-safe.
 * A filter registry with a trolltrap_register_filters action for registering custom filters.
+* Optional graduated severity: escalate the filter by how many graylist keywords a comment matches.

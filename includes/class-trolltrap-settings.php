@@ -74,6 +74,34 @@ class Mahangu_Troll_Trap_Settings {
 			'discussion',
 			'trolltrap'
 		);
+
+		register_setting(
+			'discussion',
+			'trolltrap_graduated_enabled',
+			array(
+				'type'              => 'string',
+				'sanitize_callback' => array( $this, 'sanitize_graduated_enabled' ),
+				'default'           => '0',
+			)
+		);
+
+		register_setting(
+			'discussion',
+			'trolltrap_severity_ladder',
+			array(
+				'type'              => 'array',
+				'sanitize_callback' => array( $this, 'sanitize_severity_ladder' ),
+				'default'           => Mahangu_Troll_Trap::default_severity_ladder(),
+			)
+		);
+
+		add_settings_field(
+			'trolltrap_graduated_severity',
+			__( 'Graduated Severity', 'troll-trap' ),
+			array( $this, 'settings_form_graduated' ),
+			'discussion',
+			'trolltrap'
+		);
 	}
 
 
@@ -91,6 +119,40 @@ class Mahangu_Troll_Trap_Settings {
 		$allowed = array_keys( $this->filters->transforming() );
 
 		return in_array( $value, $allowed, true ) ? $value : 'piglatin';
+	}
+
+
+	/**
+	 * Sanitize the graduated-severity toggle to '1' or '0'.
+	 *
+	 * @param mixed $value Raw option value.
+	 * @return string
+	 */
+	public function sanitize_graduated_enabled( $value ) {
+
+		return ( '1' === (string) $value ) ? '1' : '0';
+	}
+
+
+	/**
+	 * Sanitize the graduated-severity ladder: each of the three rungs must map
+	 * to a registered transforming filter, falling back to the default ladder.
+	 *
+	 * @param mixed $value Raw option value.
+	 * @return array<int,string>
+	 */
+	public function sanitize_severity_ladder( $value ) {
+
+		$allowed = array_keys( $this->filters->transforming() );
+		$default = Mahangu_Troll_Trap::default_severity_ladder();
+		$clean   = array();
+
+		foreach ( array( 1, 2, 3 ) as $rung ) {
+			$slug           = ( is_array( $value ) && isset( $value[ $rung ] ) ) ? sanitize_key( $value[ $rung ] ) : '';
+			$clean[ $rung ] = in_array( $slug, $allowed, true ) ? $slug : $default[ $rung ];
+		}
+
+		return $clean;
 	}
 
 
@@ -141,6 +203,61 @@ class Mahangu_Troll_Trap_Settings {
 		}
 
 		print '</select>';
+	}
+
+
+	public function settings_form_graduated() {
+
+		$enabled = (string) get_option( 'trolltrap_graduated_enabled', '0' );
+		$ladder  = get_option( 'trolltrap_severity_ladder', Mahangu_Troll_Trap::default_severity_ladder() );
+
+		if ( ! is_array( $ladder ) ) {
+			$ladder = Mahangu_Troll_Trap::default_severity_ladder();
+		}
+
+		// A hidden field guarantees a value posts even when the box is unchecked.
+		print '<input type="hidden" name="trolltrap_graduated_enabled" value="0">';
+
+		if ( '1' === $enabled ) {
+			print '<p><label><input type="checkbox" name="trolltrap_graduated_enabled" value="1" checked="checked"> ';
+		} else {
+			print '<p><label><input type="checkbox" name="trolltrap_graduated_enabled" value="1"> ';
+		}
+
+		print esc_html__( 'Escalate the filter with the number of graylist keywords a comment matches, instead of always using the Default Filter.', 'troll-trap' );
+		print '</label></p>';
+
+		$rungs = array(
+			1 => __( '1 matched keyword', 'troll-trap' ),
+			2 => __( '2 matched keywords', 'troll-trap' ),
+			3 => __( '3 or more matched keywords', 'troll-trap' ),
+		);
+
+		foreach ( $rungs as $rung => $label ) {
+
+			$selected_slug = isset( $ladder[ $rung ] ) ? $ladder[ $rung ] : '';
+
+			printf( '<p><label>%s &nbsp;&rarr;&nbsp; ', esc_html( $label ) );
+			printf( '<select name="trolltrap_severity_ladder[%d]">', (int) $rung );
+
+			foreach ( $this->filters->transforming() as $filter ) {
+				if ( $filter['slug'] === $selected_slug ) {
+					printf(
+						'<option value="%1$s" selected="selected">%2$s</option>',
+						esc_attr( $filter['slug'] ),
+						esc_html( $filter['name'] )
+					);
+				} else {
+					printf(
+						'<option value="%1$s">%2$s</option>',
+						esc_attr( $filter['slug'] ),
+						esc_html( $filter['name'] )
+					);
+				}
+			}
+
+			print '</select></label></p>';
+		}
 	}
 
 
