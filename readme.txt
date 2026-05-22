@@ -25,8 +25,15 @@ Instead of deleting or hiding a troll's comment, Troll Trap transforms its text 
 = Built-in filters =
 
 * **Piglatin** — converts the comment to pig latin.
+* **Leetspeak** — swaps letters for numerals (l33t 5p34k).
+* **Mocking Case** — aLtErNaTeS tHe CaSe of every letter.
+* **uwu** — softens the text by turning r and l into w.
 * **Reverse Words** — reverses each word.
+* **ROT13** — applies the ROT13 letter cipher.
 * **Disemvowel** — strips the vowels, leaving text that is readable, but only slowly.
+* **Zalgo** — decorates the text with combining marks into "cursed" text.
+
+Developers can register custom filters on the `trolltrap_register_filters` action.
 
 == Installation ==
 
@@ -61,4 +68,5 @@ Only users who can moderate comments (Editors and Administrators by default).
 * Keyword graylist that automatically applies a filter to matching comments.
 * Per-comment filter selection on the Comments admin screen.
 * Mark as Troll and Untrap bulk actions.
-* Built-in Piglatin, Reverse Words and Disemvowel filters, each multibyte- and whitespace-safe.
+* Eight built-in filters: Piglatin, Leetspeak, Mocking Case, uwu, Reverse Words, ROT13, Disemvowel and Zalgo — each multibyte- and whitespace-safe.
+* A filter registry with a trolltrap_register_filters action for registering custom filters.

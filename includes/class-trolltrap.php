@@ -71,8 +71,13 @@ class Mahangu_Troll_Trap {
 	private function register_default_filters() {
 
 		$this->filters->register( 'piglatin', __( 'Piglatin', 'troll-trap' ), array( $this->convert, 'pig_latin' ), 1 );
+		$this->filters->register( 'leetspeak', __( 'Leetspeak', 'troll-trap' ), array( $this->convert, 'leetspeak' ), 1 );
+		$this->filters->register( 'mocking', __( 'Mocking Case', 'troll-trap' ), array( $this->convert, 'mocking' ), 1 );
+		$this->filters->register( 'uwu', __( 'uwu', 'troll-trap' ), array( $this->convert, 'uwu' ), 1 );
 		$this->filters->register( 'reverse', __( 'Reverse Words', 'troll-trap' ), array( $this->convert, 'reverse' ), 2 );
+		$this->filters->register( 'rot13', __( 'ROT13', 'troll-trap' ), array( $this->convert, 'rot13' ), 2 );
 		$this->filters->register( 'disemvowel', __( 'Disemvowel', 'troll-trap' ), array( $this->convert, 'disemvowel' ), 3 );
+		$this->filters->register( 'zalgo', __( 'Zalgo', 'troll-trap' ), array( $this->convert, 'zalgo' ), 3 );
 		$this->filters->register( 'none', __( 'None', 'troll-trap' ), null, 0 );
 	}
 

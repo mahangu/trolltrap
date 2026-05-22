@@ -40,6 +40,10 @@
     {
       "step": "runPHP",
       "code": "<?php require_once '/wordpress/wp-load.php'; $reg = mahangu_troll_trap()->filters; if ( ! ( $reg instanceof Mahangu_Troll_Trap_Filters ) ) { fwrite( STDERR, 'FAIL: filter registry not available' . PHP_EOL ); exit( 1 ); } if ( $reg->apply( 'disemvowel', 'Hello World' ) !== 'Hll Wrld' ) { fwrite( STDERR, 'FAIL: registry apply(disemvowel) wrong' . PHP_EOL ); exit( 1 ); } if ( $reg->apply( 'none', 'Hello World' ) !== 'Hello World' ) { fwrite( STDERR, 'FAIL: registry apply(none) should be identity' . PHP_EOL ); exit( 1 ); } if ( $reg->apply( 'bogus-slug', 'Hello World' ) !== 'Hello World' ) { fwrite( STDERR, 'FAIL: registry apply(unknown) should be identity' . PHP_EOL ); exit( 1 ); } if ( in_array( 'none', array_keys( $reg->transforming() ), true ) ) { fwrite( STDERR, 'FAIL: transforming() must exclude none' . PHP_EOL ); exit( 1 ); } if ( count( $reg->slugs() ) < 4 ) { fwrite( STDERR, 'FAIL: expected at least 4 registered filters' . PHP_EOL ); exit( 1 ); } echo 'OK: filter registry registered and dispatching' . PHP_EOL;"
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php require_once '/wordpress/wp-load.php'; $reg = mahangu_troll_trap()->filters; foreach ( array( 'leetspeak', 'mocking', 'uwu', 'rot13', 'zalgo' ) as $slug ) { if ( ! $reg->has( $slug ) ) { fwrite( STDERR, 'FAIL: filter ' . $slug . ' not registered' . PHP_EOL ); exit( 1 ); } $out = $reg->apply( $slug, 'héllo Wörld 123' ); if ( ! mb_check_encoding( $out, 'UTF-8' ) ) { fwrite( STDERR, 'FAIL: ' . $slug . ' produced invalid UTF-8' . PHP_EOL ); exit( 1 ); } } if ( $reg->apply( 'rot13', $reg->apply( 'rot13', 'Hello' ) ) !== 'Hello' ) { fwrite( STDERR, 'FAIL: rot13 not self-inverse' . PHP_EOL ); exit( 1 ); } if ( $reg->apply( 'uwu', 'really' ) !== 'weawwy' ) { fwrite( STDERR, 'FAIL: uwu wrong' . PHP_EOL ); exit( 1 ); } echo 'OK: new transforms registered and producing valid UTF-8' . PHP_EOL;"
     }
   ]
 }
