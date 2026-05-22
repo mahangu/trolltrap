@@ -39,7 +39,13 @@
         </properties>
     </rule>
 
-    <!-- Pre-existing style noise we don't want to block CI on. Track separately. -->
+    <!--
+    Deliberate ruleset choices for this project:
+    - WordPress.Files.FileName: the include files use short, conventional
+      names (class-trolltrap.php) rather than class-name-derived ones.
+    - Squiz.Commenting.*: full Squiz docblock formatting is not enforced;
+      WordPress core itself does not require it.
+    -->
     <rule ref="WordPress.Files.FileName">
         <severity>0</severity>
     </rule>
@@ -47,9 +53,6 @@
         <severity>0</severity>
     </rule>
     <rule ref="Squiz.Commenting.FileComment">
-        <severity>0</severity>
-    </rule>
-    <rule ref="Generic.WhiteSpace.DisallowSpaceIndent">
         <severity>0</severity>
     </rule>
 </ruleset>
