@@ -100,4 +100,4 @@ jobs:
             --blueprint=.github/playground/blueprint.json \
             --wp="${{ matrix.wp }}" \
             --php="${{ matrix.php }}" \
-            --mount="$PWD:/wordpress/wp-content/plugins/trolltrap"
+            --mount="$PWD:/wordpress/wp-content/plugins/troll-trap"

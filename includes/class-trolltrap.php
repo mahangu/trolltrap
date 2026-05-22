@@ -43,7 +43,7 @@ class Mahangu_Troll_Trap {
 
 	public function __construct() {
 
-		add_filter( 'comment_post', array( $this, 'comments_tag' ), 10, 2 );
+		add_action( 'comment_post', array( $this, 'comments_tag' ), 10, 1 );
 
 		add_filter( 'comment_text', array( $this, 'comments_render' ), 10, 2 );
 	}
@@ -53,9 +53,8 @@ class Mahangu_Troll_Trap {
 
 		if ( is_null( self::$instance ) ) {
 			self::$instance = new self();
+			self::$instance->initialize_global_objects();
 		}
-
-		self::$instance->initialize_global_objects();
 
 		return self::$instance;
 	}
@@ -69,17 +68,13 @@ class Mahangu_Troll_Trap {
 	}
 
 	/**
-	 * function comments tag()
+	 * Tag a newly posted comment if it matches the Comment Graylist.
 	 *
-	 * Checks if each new comment contains any words found on the Graylist.
 	 * Hooks into 'comment_post' and fires whenever a new comment is posted.
 	 *
-	 * @access   public
-	 * @since    0.1.0
-	 * @param    $comment_id int The ID of the newly posted comment
-	 * @return   Null
+	 * @since 0.1.0
+	 * @param int $comment_id The ID of the newly posted comment.
 	 */
-
 	public function comments_tag( $comment_id ) {
 
 		$default_filter = get_option( 'trolltrap_default_filter', 'piglatin' );
@@ -87,9 +82,9 @@ class Mahangu_Troll_Trap {
 
 		$comment = get_comment( $comment_id );
 
-		// This bit grabbed directly from wp-includes/comment.php/wp_blacklist_check()
+		// Keyword matching mirrors WordPress' own wp_check_comment_disallowed_list().
 
-		$mod_keys = trim( get_option( 'trolltrap_words' ) );
+		$mod_keys = trim( get_option( 'trolltrap_words', '' ) );
 
 		$words = explode( "\n", $mod_keys );
 
@@ -122,37 +117,30 @@ class Mahangu_Troll_Trap {
 		}
 
 		update_comment_meta( $comment_id, '_trolltrap_filter', $applied );
-	} // End comments_tag()
+	}
 
 
 	/**
-	 * function comments_render()
+	 * Filter a comment's displayed text according to its stored filter.
 	 *
-	 * Checks if each comment has '_trolltrap_filter' meta data set for it
-	 * and runs manipulates the $content of the comment based on this.
+	 * Hooks into 'comment_text', which fires wherever a comment is rendered.
 	 *
-	 * If '_trolltrap_filter' is 'piglatin', for example, we convert the
-	 * $content to piglatin before passing it back to WordPress.
-	 *
-	 * Hooks into 'comment_text' and fires whenever a comment is rendered,
-	 * anywhere on the site.
-	 *
-	 * @access   public
-	 * @since    0.1.0
-	 * @param    $content str
-	 * @return   str
+	 * @since 0.1.0
+	 * @param string          $content The comment text.
+	 * @param WP_Comment|null $comment The comment object, when supplied by the caller.
+	 * @return string
 	 */
+	public function comments_render( $content, $comment = null ) {
 
-	public function comments_render( $content ) {
-
-		// If we're in WP-Admin (typically edit-comments.php), return the original comment.
-
+		// Leave the comment untouched in the admin (e.g. edit-comments.php).
 		if ( is_admin() ) {
-
 			return $content;
 		}
 
-		$comment_id = get_comment_ID();
+		// The Comments block and the REST API pass the comment as an argument
+		// but do not set the global $comment that get_comment_ID() relies on,
+		// so prefer the passed object and only fall back to the global.
+		$comment_id = $comment instanceof WP_Comment ? $comment->comment_ID : get_comment_ID();
 
 		$comment_filter = get_comment_meta( $comment_id, '_trolltrap_filter', true );
 
@@ -171,5 +159,5 @@ class Mahangu_Troll_Trap {
 				return $content;
 
 		}
-	} // End comments_render()
+	}
 }
