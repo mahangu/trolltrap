@@ -32,6 +32,10 @@
     {
       "step": "runPHP",
       "code": "<?php require_once '/wordpress/wp-load.php'; wp_set_current_user( 1 ); $tt = mahangu_troll_trap(); $_REQUEST = array( 'bulk_untrap_comments' => 2 ); ob_start(); $tt->settings->handle_bulk_actions_notice(); $out = ob_get_clean(); if ( strpos( $out, 'Untrapped 2 comments.' ) === false ) { fwrite( STDERR, 'FAIL: untrap notice text missing or wrong. Got: ' . $out . PHP_EOL ); exit( 1 ); } $_REQUEST = array( 'bulk_troll_comments' => 1 ); ob_start(); $tt->settings->handle_bulk_actions_notice(); $out = ob_get_clean(); if ( strpos( $out, 'Marked 1 comment as Troll.' ) === false ) { fwrite( STDERR, 'FAIL: mark notice text missing or wrong. Got: ' . $out . PHP_EOL ); exit( 1 ); } echo 'OK: bulk action notices render correctly (singular + plural)' . PHP_EOL;"
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php require_once '/wordpress/wp-load.php'; $c = mahangu_troll_trap()->convert; $rev = $c->reverse( 'héllo wörld' ); if ( ! mb_check_encoding( $rev, 'UTF-8' ) ) { fwrite( STDERR, 'FAIL: reverse produced invalid UTF-8' . PHP_EOL ); exit( 1 ); } if ( $rev !== 'olléh dlröw' ) { fwrite( STDERR, 'FAIL: multibyte reverse wrong, got: ' . $rev . PHP_EOL ); exit( 1 ); } $multi = $c->pig_latin( 'line one' . PHP_EOL . 'line two' ); if ( strpos( $multi, PHP_EOL ) === false ) { fwrite( STDERR, 'FAIL: pig_latin collapsed the newline' . PHP_EOL ); exit( 1 ); } echo 'OK: converters are multibyte- and whitespace-safe' . PHP_EOL;"
     }
   ]
 }
