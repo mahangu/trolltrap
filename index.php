@@ -21,10 +21,9 @@ define( 'TROLLTRAP_VERSION', '0.1.0' );
 
 require_once 'includes/class-trolltrap.php';
 
-function mahangu_Troll_Trap() {
+function mahangu_troll_trap() {
 
-	return mahangu_Troll_Trap::instance( __FILE__, TROLLTRAP_VERSION );
-
+	return Mahangu_Troll_Trap::instance();
 }
 
-add_action( 'plugins_loaded', 'mahangu_Troll_Trap' );
+add_action( 'plugins_loaded', 'mahangu_troll_trap' );

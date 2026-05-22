@@ -1,15 +1,21 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 require 'class-trolltrap-settings.php';
 require 'class-trolltrap-convert.php';
 
 
-class mahangu_Troll_Trap
-{
+class Mahangu_Troll_Trap {
 
-	private static $_instance = null;
+
+	private static $instance = null;
+
+	public $settings;
+
+	public $convert;
 
 	// Main array of comment filters that we use in all sub classes to generate
 	// <select> boxes etc.
@@ -35,34 +41,31 @@ class mahangu_Troll_Trap
 
 
 
-	public function __construct($file, $version = '1.0.1') {
+	public function __construct() {
 
-		add_filter('comment_post', array($this, 'comments_tag'), 10, 2);
+		add_filter( 'comment_post', array( $this, 'comments_tag' ), 10, 2 );
 
-		add_filter('comment_text', array($this, 'comments_render'), 10, 2);
-
+		add_filter( 'comment_text', array( $this, 'comments_render' ), 10, 2 );
 	}
 
 
-	public static function instance($file, $version = '0.1.0') {
+	public static function instance() {
 
-
-		if (is_null(self::$_instance)) {
-			self::$_instance = new self($file, $version);
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new self();
 		}
 
-		self::$_instance->initialize_global_objects();
+		self::$instance->initialize_global_objects();
 
-		return self::$_instance;
+		return self::$instance;
 	}
 
 
 	public function initialize_global_objects() {
 
-		$this->settings = new mahangu_Troll_Trap_settings(); // Settings->Discussion and Comments panel setup class.
+		$this->settings = new Mahangu_Troll_Trap_Settings(); // Settings->Discussion and Comments panel setup class.
 
-		$this->convert = new mahangu_Troll_Trap_convert(); // Text manipulation class.
-
+		$this->convert = new Mahangu_Troll_Trap_Convert(); // Text manipulation class.
 	}
 
 	/**
@@ -77,50 +80,48 @@ class mahangu_Troll_Trap
 	 * @return   Null
 	 */
 
-	public function comments_tag($comment_id) {
+	public function comments_tag( $comment_id ) {
 
-		$default_filter = get_option('trolltrap_default_filter', 'piglatin');
+		$default_filter = get_option( 'trolltrap_default_filter', 'piglatin' );
 		$applied        = 'none';
 
-		$comment = get_comment($comment_id);
+		$comment = get_comment( $comment_id );
 
 		// This bit grabbed directly from wp-includes/comment.php/wp_blacklist_check()
 
-		$mod_keys = trim( get_option('trolltrap_words') );
+		$mod_keys = trim( get_option( 'trolltrap_words' ) );
 
-		$words = explode("\n", $mod_keys );
+		$words = explode( "\n", $mod_keys );
 
 		foreach ( (array) $words as $word ) {
-			$word = trim($word);
+			$word = trim( $word );
 
 			// Skip empty lines
-			if (empty($word)) {
+			if ( empty( $word ) ) {
 				continue;
 			}
 
 			// Do some escaping magic so that '#' chars in the
 			// spam words don't break things:
-			$word = preg_quote($word, '#');
+			$word = preg_quote( $word, '#' );
 
 			$pattern = "#$word#i";
 			if (
-				preg_match($pattern, $comment->comment_author)
-				|| preg_match($pattern, $comment->comment_author_email)
-				|| preg_match($pattern, $comment->comment_author_url)
-				|| preg_match($pattern, $comment->comment_content)
-				|| preg_match($pattern, $comment->comment_author_IP)
-				|| preg_match($pattern, $comment->comment_agent)
+				preg_match( $pattern, $comment->comment_author )
+				|| preg_match( $pattern, $comment->comment_author_email )
+				|| preg_match( $pattern, $comment->comment_author_url )
+				|| preg_match( $pattern, $comment->comment_content )
+				|| preg_match( $pattern, $comment->comment_author_IP )
+				|| preg_match( $pattern, $comment->comment_agent )
 			) {
 
 				$applied = $default_filter;
 				break;
 
 			}
-
 		}
 
-		update_comment_meta($comment_id, '_trolltrap_filter', $applied);
-
+		update_comment_meta( $comment_id, '_trolltrap_filter', $applied );
 	} // End comments_tag()
 
 
@@ -142,46 +143,33 @@ class mahangu_Troll_Trap
 	 * @return   str
 	 */
 
-	public function comments_render($content) {
+	public function comments_render( $content ) {
 
 		// If we're in WP-Admin (typically edit-comments.php), return the original comment.
 
-		if (is_admin()) {
+		if ( is_admin() ) {
 
 			return $content;
 		}
 
-		$string = $content;
-
 		$comment_id = get_comment_ID();
 
-		$comment_filter = get_comment_meta($comment_id, '_trolltrap_filter', true);
+		$comment_filter = get_comment_meta( $comment_id, '_trolltrap_filter', true );
 
-		switch ($comment_filter) {
+		switch ( $comment_filter ) {
 
-			case "piglatin":
-				$content = $this->convert->pig_latin($string);
-				return $content;
-				break;
+			case 'piglatin':
+				return $this->convert->pig_latin( $content );
 
-			case "reverse":
-				$content = $this->convert->reverse($string);
-				return $content;
-				break;
+			case 'reverse':
+				return $this->convert->reverse( $content );
 
-			case "disemvowel":
-				$content = $this->convert->disemvowel($string);
-				return $content;
-				break;
+			case 'disemvowel':
+				return $this->convert->disemvowel( $content );
 
 			default:
 				return $content;
 
 		}
-
-
 	} // End comments_render()
-
 }
-
-?>

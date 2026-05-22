@@ -1,41 +1,41 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 // Settings->Discussion and Comments panel setup class.
 
-class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
+class Mahangu_Troll_Trap_Settings extends Mahangu_Troll_Trap {
 
 
 
-	public function __construct (  ) {
-
+	public function __construct() {
 
 		// Register and render settings on Settings > Discussion page.
-		add_action( 'admin_init', array ($this, 'settings_register' ) );
+		add_action( 'admin_init', array( $this, 'settings_register' ) );
 
 		// Setup custom 'Troll Trap Filter' column on the Comments panel.
-		add_action('manage_comments_custom_column', array ($this, 'admin_column_output'), 10, 2);
-		add_filter('manage_edit-comments_columns', array ($this, 'admin_column_setup') );
+		add_action( 'manage_comments_custom_column', array( $this, 'admin_column_output' ), 10, 2 );
+		add_filter( 'manage_edit-comments_columns', array( $this, 'admin_column_setup' ) );
 
-        add_filter( 'bulk_actions-edit-comments', array ($this, 'register_bulk_actions') );
-        add_filter( 'handle_bulk_actions-edit-comments', array ($this, 'handle_bulk_actions'), 1, 3);
+		add_filter( 'bulk_actions-edit-comments', array( $this, 'register_bulk_actions' ) );
+		add_filter( 'handle_bulk_actions-edit-comments', array( $this, 'handle_bulk_actions' ), 1, 3 );
 
-        add_action( 'admin_notices', array ($this, 'handle_bulk_actions_notice') );
+		add_action( 'admin_notices', array( $this, 'handle_bulk_actions_notice' ) );
 
-        // POST endpoint for per-comment filter changes (replaces in-place GET handling).
-        add_action( 'admin_post_trolltrap_set_filter', array( $this, 'handle_set_filter' ) );
-
-    }
-
+		// POST endpoint for per-comment filter changes (replaces in-place GET handling).
+		add_action( 'admin_post_trolltrap_set_filter', array( $this, 'handle_set_filter' ) );
+	}
 
 
-	function settings_register () {
+
+	public function settings_register() {
 
 		add_settings_section(
 			'trolltrap',
 			'Troll Trap',
-			array ($this, 'settings_description'),
+			array( $this, 'settings_description' ),
 			'discussion'
 		);
 
@@ -48,7 +48,7 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 		add_settings_field(
 			'trolltrap_words',
 			'Comment Graylist',
-			array ($this, 'settings_form_words'),
+			array( $this, 'settings_form_words' ),
 			'discussion',
 			'trolltrap'
 		);
@@ -62,18 +62,16 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 		add_settings_field(
 			'trolltrap_default_filter',
 			'Default Filter',
-			array ($this, 'settings_form_default_filter'),
+			array( $this, 'settings_form_default_filter' ),
 			'discussion',
 			'trolltrap'
 		);
-
 	}
 
 
-	function settings_description() {
+	public function settings_description() {
 
-		?><p class="description">Options for the Troll Trap plugin.</p><?php
-
+		print '<p class="description">Options for the Troll Trap plugin.</p>';
 	}
 
 
@@ -83,158 +81,162 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 		$allowed = array_diff( $allowed, array( 'none' ) ); // 'none' is not a valid default.
 
 		return in_array( $value, $allowed, true ) ? $value : 'piglatin';
-
 	}
 
 
 	public function settings_form_words() {
 
-		$data = esc_textarea( get_option( 'trolltrap_words', '' ) );
-
-		print ('<p><label for="trolltrap_words">When a comment contains any of these words in its content, name, URL, email, or IP, the default Troll Trap filter will be applied to it. One word or IP per line. It will match inside words, so “press” will match “WordPress”.</label></p>');
+		print '<p><label for="trolltrap_words">When a comment contains any of these words in its content, name, URL, email, or IP, the default Troll Trap filter will be applied to it. One word or IP per line. It will match inside words, so “press” will match “WordPress”.</label></p>';
 
 		printf(
-			'<textarea name="trolltrap_words" rows="10" cols="50" class="large-text code">%1$s</textarea>',
-			$data
+			'<textarea name="trolltrap_words" rows="10" cols="50" class="large-text code">%s</textarea>',
+			esc_textarea( get_option( 'trolltrap_words', '' ) )
 		);
-
 	}
+
 
 	public function settings_form_default_filter() {
 
-		$stored_filter = esc_attr( get_option( 'trolltrap_default_filter' ) ) ;
+		$stored_filter = esc_attr( get_option( 'trolltrap_default_filter' ) );
 
-		printf (
+		printf(
 			'<p><label for="trolltrap_default_filter">Choose which filter will be applied to comments by default. The filter for individual comments can be edited via the <a href="%1$s">comment moderation interface</a>.</label></p>',
-			admin_url( 'edit-comments.php' )
-
+			esc_url( admin_url( 'edit-comments.php' ) )
 		);
-
 
 		print '<select name="trolltrap_default_filter" id="trolltrap_default_filter" style="display: block;">';
 
-		foreach ($this->filters as $filter) {
+		foreach ( $this->filters as $filter ) {
 
-			if ($stored_filter == $filter["slug"] ) {
+			if ( $filter['slug'] === $stored_filter ) {
 
 				printf(
 					'<option value="%1$s" selected="selected">%2$s</option>',
-					$filter["slug"], $filter["name"]
+					esc_attr( $filter['slug'] ),
+					esc_html( $filter['name'] )
 				);
 
-			} elseif ( $filter["slug"] != "none" ) { //'None' cannot be a default filter, becuase it does nothing.
+			} elseif ( 'none' !== $filter['slug'] ) { // 'None' cannot be a default filter, because it does nothing.
 
 				printf(
 					'<option value="%1$s">%2$s</option>',
-					$filter["slug"], $filter["name"]
-
+					esc_attr( $filter['slug'] ),
+					esc_html( $filter['name'] )
 				);
 
 			}
-
 		}
 
-		print ("</select>");
-
-
-
+		print '</select>';
 	}
 
 
-     public function register_bulk_actions( $bulk_actions ) {
-        $bulk_actions['mark_as_troll'] = __( 'Mark as Troll', 'troll-trap' );
-        $bulk_actions['untrap']        = __( 'Untrap (clear filter)', 'troll-trap' );
-        return $bulk_actions;
-    }
+	public function register_bulk_actions( $bulk_actions ) {
+		$bulk_actions['mark_as_troll'] = __( 'Mark as Troll', 'troll-trap' );
+		$bulk_actions['untrap']        = __( 'Untrap (clear filter)', 'troll-trap' );
+		return $bulk_actions;
+	}
 
 
-    public function handle_bulk_actions( $redirect_to, $doaction, $comment_ids ) {
+	public function handle_bulk_actions( $redirect_to, $doaction, $comment_ids ) {
 
-        if ( $doaction !== 'mark_as_troll' && $doaction !== 'untrap' ) {
-            return $redirect_to;
-        }
+		if ( 'mark_as_troll' !== $doaction && 'untrap' !== $doaction ) {
+			return $redirect_to;
+		}
 
-        if ( ! current_user_can( 'moderate_comments' ) ) {
-            return $redirect_to;
-        }
+		if ( ! current_user_can( 'moderate_comments' ) ) {
+			return $redirect_to;
+		}
 
-        // Core's edit-comments.php already verifies the 'bulk-comments' nonce
-        // before this filter fires; re-checking signals intent and protects
-        // any caller that invokes the filter directly.
-        check_admin_referer( 'bulk-comments' );
+		// Core's edit-comments.php already verifies the 'bulk-comments' nonce
+		// before this filter fires; re-checking signals intent and protects
+		// any caller that invokes the filter directly.
+		check_admin_referer( 'bulk-comments' );
 
-        if ( 'mark_as_troll' === $doaction ) {
+		if ( 'mark_as_troll' === $doaction ) {
 
-            $default_filter = get_option( 'trolltrap_default_filter', 'piglatin' );
-            $allowed        = wp_list_pluck( $this->filters, 'slug' );
-            if ( ! in_array( $default_filter, $allowed, true ) ) {
-                $default_filter = 'piglatin';
-            }
+			$default_filter = get_option( 'trolltrap_default_filter', 'piglatin' );
+			$allowed        = wp_list_pluck( $this->filters, 'slug' );
+			if ( ! in_array( $default_filter, $allowed, true ) ) {
+				$default_filter = 'piglatin';
+			}
 
-            foreach ( $comment_ids as $comment_id ) {
-                update_comment_meta( $comment_id, '_trolltrap_filter', $default_filter );
-            }
+			foreach ( $comment_ids as $comment_id ) {
+				update_comment_meta( $comment_id, '_trolltrap_filter', $default_filter );
+			}
 
-            return add_query_arg( 'bulk_troll_comments', count( $comment_ids ), $redirect_to );
-        }
+			return add_query_arg( 'bulk_troll_comments', count( $comment_ids ), $redirect_to );
+		}
 
-        // 'untrap' — clear the filter on selected comments.
-        foreach ( $comment_ids as $comment_id ) {
-            update_comment_meta( $comment_id, '_trolltrap_filter', 'none' );
-        }
+		// 'untrap' — clear the filter on selected comments.
+		foreach ( $comment_ids as $comment_id ) {
+			update_comment_meta( $comment_id, '_trolltrap_filter', 'none' );
+		}
 
-        return add_query_arg( 'bulk_untrap_comments', count( $comment_ids ), $redirect_to );
-    }
-
-
-    public function handle_bulk_actions_notice() {
-
-        if ( ! empty( $_REQUEST['bulk_troll_comments'] ) ) {
-            $count = intval( $_REQUEST['bulk_troll_comments'] );
-            printf(
-                '<div id="message" class="updated fade"><p>' . esc_html(
-                    _n(
-                        'Marked %s comment as Troll.',
-                        'Marked %s comments as Troll.',
-                        $count,
-                        'troll-trap'
-                    )
-                ) . '</p></div>',
-                esc_html( number_format_i18n( $count ) )
-            );
-        }
-
-        if ( ! empty( $_REQUEST['bulk_untrap_comments'] ) ) {
-            $count = intval( $_REQUEST['bulk_untrap_comments'] );
-            printf(
-                '<div id="message" class="updated fade"><p>' . esc_html(
-                    _n(
-                        'Untrapped %s comment.',
-                        'Untrapped %s comments.',
-                        $count,
-                        'troll-trap'
-                    )
-                ) . '</p></div>',
-                esc_html( number_format_i18n( $count ) )
-            );
-        }
-    }
+		return add_query_arg( 'bulk_untrap_comments', count( $comment_ids ), $redirect_to );
+	}
 
 
+	public function handle_bulk_actions_notice() {
 
-    public function admin_column_setup($columns) {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only counts for a post-redirect admin notice; the originating bulk action verified the nonce.
+		$trolled   = isset( $_REQUEST['bulk_troll_comments'] ) ? intval( $_REQUEST['bulk_troll_comments'] ) : 0;
+		$untrapped = isset( $_REQUEST['bulk_untrap_comments'] ) ? intval( $_REQUEST['bulk_untrap_comments'] ) : 0;
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-		$columns["trolltrap"] = "Troll Trap Filter";
+		if ( $trolled > 0 ) {
+			printf(
+				'<div id="message" class="updated fade"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %s: number of comments. */
+						_n(
+							'Marked %s comment as Troll.',
+							'Marked %s comments as Troll.',
+							$trolled,
+							'troll-trap'
+						),
+						number_format_i18n( $trolled )
+					)
+				)
+			);
+		}
+
+		if ( $untrapped > 0 ) {
+			printf(
+				'<div id="message" class="updated fade"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %s: number of comments. */
+						_n(
+							'Untrapped %s comment.',
+							'Untrapped %s comments.',
+							$untrapped,
+							'troll-trap'
+						),
+						number_format_i18n( $untrapped )
+					)
+				)
+			);
+		}
+	}
+
+
+	public function admin_column_setup( $columns ) {
+
+		$columns['trolltrap'] = 'Troll Trap Filter';
 		return $columns;
-
 	}
 
-	public function admin_column_output($colname, $comment_id) {
 
-		$comment_meta = get_comment_meta($comment_id, '_trolltrap_filter', true);
+	public function admin_column_output( $colname, $comment_id ) {
 
+		$comment_meta = get_comment_meta( $comment_id, '_trolltrap_filter', true );
+
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only pagination values used to rebuild the form's return URL.
 		$paged = isset( $_GET['paged'] ) ? absint( $_GET['paged'] ) : 0;
-		$p     = isset( $_GET['p'] )     ? absint( $_GET['p'] )     : 0;
+		$p     = isset( $_GET['p'] ) ? absint( $_GET['p'] ) : 0;
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		printf(
 			'<form name="trolltrap" method="POST" action="%1$s">',
@@ -245,7 +247,7 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 		wp_nonce_field( 'trolltrap_set_filter_' . $comment_id );
 
-		if ($comment_meta != "none") {
+		if ( 'none' !== $comment_meta ) {
 
 			print '<select onchange="this.form.submit()" name="trolltrap" id="trolltrap" style="display: block; border: 1px solid red;">';
 
@@ -255,29 +257,28 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 		}
 
-		foreach ($this->filters as $filter) {
+		foreach ( $this->filters as $filter ) {
 
-			if ($comment_meta == $filter["slug"]) {
+			if ( $filter['slug'] === $comment_meta ) {
 
 				printf(
 					'<option value="%1$s" selected="selected">%2$s</option>',
-					$filter["slug"], $filter["name"]
-
+					esc_attr( $filter['slug'] ),
+					esc_html( $filter['name'] )
 				);
 
 			} else {
 
 				printf(
 					'<option value="%1$s">%2$s</option>',
-					$filter["slug"], $filter["name"]
-
+					esc_attr( $filter['slug'] ),
+					esc_html( $filter['name'] )
 				);
 
 			}
-
 		}
 
-		print ("</select>");
+		print '</select>';
 
 		printf(
 			'<input type="hidden" name="comment_id" value="%d">',
@@ -286,17 +287,15 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 		printf(
 			'<input type="hidden" name="paged" value="%d">',
-			$paged
+			(int) $paged
 		);
 
 		printf(
 			'<input type="hidden" name="p" value="%d">',
-			$p
+			(int) $p
 		);
 
-
-		print ("</form>");
-
+		print '</form>';
 	}
 
 
@@ -328,7 +327,7 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 		$redirect = admin_url( 'edit-comments.php' );
 		$paged    = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 0;
-		$p        = isset( $_POST['p'] )     ? absint( $_POST['p'] )     : 0;
+		$p        = isset( $_POST['p'] ) ? absint( $_POST['p'] ) : 0;
 		if ( $paged ) {
 			$redirect = add_query_arg( 'paged', $paged, $redirect );
 		}
@@ -338,9 +337,5 @@ class mahangu_Troll_Trap_settings extends mahangu_Troll_Trap {
 
 		wp_safe_redirect( $redirect );
 		exit;
-
 	}
-
-
-
 }

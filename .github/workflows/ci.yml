@@ -34,7 +34,6 @@ jobs:
   phpcs:
     name: WordPress Coding Standards
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
@@ -42,6 +41,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
+          coverage: none
           tools: composer:v2, cs2pr
 
       - name: Install PHPCS + WPCS
@@ -53,17 +53,23 @@ jobs:
             phpcsstandards/phpcsutils \
             phpcsstandards/phpcsextra \
             dealerdirect/phpcodesniffer-composer-installer
-          echo "$(composer global config bin-dir --absolute --quiet)" >> "$GITHUB_PATH"
+          COMPOSER_BIN="$(composer global config bin-dir --absolute --quiet)"
+          COMPOSER_HOME_DIR="$(composer global config home --quiet)"
+          echo "$COMPOSER_BIN" >> "$GITHUB_PATH"
+          # Register the WordPress standards explicitly so the run does not
+          # depend on the composer-installer plugin having executed.
+          "$COMPOSER_BIN/phpcs" --config-set installed_paths \
+            "$COMPOSER_HOME_DIR/vendor/wp-coding-standards/wpcs,$COMPOSER_HOME_DIR/vendor/phpcsstandards/phpcsutils,$COMPOSER_HOME_DIR/vendor/phpcsstandards/phpcsextra"
 
-      - name: Verify installed standards
+      - name: Verify WordPress standard is installed
         run: phpcs -i
 
       - name: Run PHPCS
-        run: phpcs --report=full --report-checkstyle=phpcs-report.xml || true
+        run: phpcs --report-full --report-checkstyle=phpcs-report.xml
 
       - name: Annotate PR with PHPCS findings
-        if: always()
-        run: cs2pr --graceful-warnings phpcs-report.xml || true
+        if: failure()
+        run: cs2pr phpcs-report.xml
 
   playground:
     name: Playground (WP ${{ matrix.wp }}, PHP ${{ matrix.php }})
