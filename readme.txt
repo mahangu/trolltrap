@@ -4,7 +4,7 @@ Tags: comments, comment-moderation, moderation, anti-spam, troll
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.1.0
+Stable tag: 1.0.0-alpha.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,9 +56,9 @@ Only users who can moderate comments (Editors and Administrators by default).
 
 == Changelog ==
 
-= 0.1.0 =
-* Initial public release.
+= 1.0.0-alpha.1 =
+* First public alpha.
 * Keyword graylist that automatically applies a filter to matching comments.
 * Per-comment filter selection on the Comments admin screen.
 * Mark as Troll and Untrap bulk actions.
-* Built-in Piglatin, Reverse Words and Disemvowel filters.
+* Built-in Piglatin, Reverse Words and Disemvowel filters, each multibyte- and whitespace-safe.
