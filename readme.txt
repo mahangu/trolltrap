@@ -57,9 +57,9 @@ Only users who can moderate comments (Editors and Administrators by default).
 
 == Screenshots ==
 
-1. The Comment Graylist and Default Filter settings under Settings &gt; Discussion.
+1. The Troll Trap and Troll Trap AI settings under Settings &gt; Discussion.
 2. The Troll Trap Filter column and bulk actions on the Comments admin screen.
-3. A filtered comment as it appears to site visitors.
+3. Trapped comments as they appear to site visitors, beside untouched ones.
 
 == Changelog ==
 
