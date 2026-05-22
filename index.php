@@ -3,7 +3,7 @@
 Plugin Name:       Troll Trap
 Plugin URI:        https://github.com/mahangu/troll-trap
 Description:       Selectively filter and obfuscate comments based on keywords — a moderation tier between Approved and Unapproved.
-Version:           0.1.0
+Version:           1.0.0-alpha.1
 Requires at least: 6.5
 Requires PHP:      8.0
 Author:            Mahangu Weerasighe
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'TROLLTRAP_VERSION', '0.1.0' );
+define( 'TROLLTRAP_VERSION', '1.0.0-alpha.1' );
 
 require_once 'includes/class-trolltrap.php';
 

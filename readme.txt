@@ -4,7 +4,7 @@ Tags: comments, comment-moderation, moderation, anti-spam, troll
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 0.1.0
+Stable tag: 1.0.0-alpha.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,7 +18,7 @@ Instead of deleting or hiding a troll's comment, Troll Trap transforms its text 
 
 = Two ways to use it =
 
-1. **Keyword graylist (automatic).** Maintain a list of keywords under Settings &gt; Discussion &gt; Troll Trap. When an incoming comment matches a keyword in its content, author name, URL, email, or IP, the default Troll Trap filter is applied to it automatically. The graylist works like WordPress' built-in disallowed-comment list, but obfuscates instead of blocks.
+1. **Keyword graylist (automatic).** Maintain a list of keywords under Settings &gt; Discussion &gt; Troll Trap. When an incoming comment matches a keyword in its content, author name, URL, email, IP address, or user agent, the default Troll Trap filter is applied to it automatically. The graylist works like WordPress' built-in disallowed-comment list, but obfuscates instead of blocks.
 
 2. **Manual filters (per comment).** From the Comments admin screen you can apply a filter to any individual comment, or use the **Mark as Troll** and **Untrap** bulk actions to filter or clear many comments at once.
 
@@ -56,9 +56,9 @@ Only users who can moderate comments (Editors and Administrators by default).
 
 == Changelog ==
 
-= 0.1.0 =
-* Initial public release.
+= 1.0.0-alpha.1 =
+* First public alpha.
 * Keyword graylist that automatically applies a filter to matching comments.
 * Per-comment filter selection on the Comments admin screen.
 * Mark as Troll and Untrap bulk actions.
-* Built-in Piglatin, Reverse Words and Disemvowel filters.
+* Built-in Piglatin, Reverse Words and Disemvowel filters, each multibyte- and whitespace-safe.

@@ -54,6 +54,12 @@ jobs:
             --exclude="build" ./ "build/${PLUGIN_SLUG}/"
           ( cd build && zip -r "${PLUGIN_SLUG}.zip" "${PLUGIN_SLUG}" )
 
+      - name: Upload plugin zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: troll-trap-plugin
+          path: build/troll-trap.zip
+
       - name: Create GitHub Release
         if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
