@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,6 +23,7 @@ jobs:
           coverage: none
 
       - name: Verify tag matches plugin header version
+        if: github.ref_type == 'tag'
         run: |
           TAG="${GITHUB_REF_NAME#v}"
           HEADER_VERSION=$(grep -oP 'Version:\s*\K[0-9][0-9A-Za-z.\-]*' index.php | head -n1)
@@ -46,14 +48,15 @@ jobs:
 
       - name: Build plugin zip
         run: |
-          PLUGIN_SLUG=trolltrap
+          PLUGIN_SLUG=troll-trap
           mkdir -p "build/${PLUGIN_SLUG}"
           rsync -a --exclude='.git' --exclude-from='.distignore' \
             --exclude="build" ./ "build/${PLUGIN_SLUG}/"
           ( cd build && zip -r "${PLUGIN_SLUG}.zip" "${PLUGIN_SLUG}" )
 
       - name: Create GitHub Release
+        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          files: build/trolltrap.zip
+          files: build/troll-trap.zip
           generate_release_notes: true

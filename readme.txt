@@ -30,7 +30,7 @@ Instead of deleting or hiding a troll's comment, Troll Trap transforms its text 
 
 == Installation ==
 
-1. Upload the `trolltrap` folder to `/wp-content/plugins/`, or install the plugin through the Plugins screen in WordPress.
+1. Upload the `troll-trap` folder to `/wp-content/plugins/`, or install the plugin through the Plugins screen in WordPress.
 2. Activate the plugin through the Plugins screen.
 3. Go to Settings &gt; Discussion and scroll to the Troll Trap section to set your Comment Graylist and Default Filter.
 
