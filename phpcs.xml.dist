@@ -33,7 +33,7 @@
         <properties>
             <property name="prefixes" type="array">
                 <element value="trolltrap"/>
-                <element value="mahangu_Troll_Trap"/>
+                <element value="Mahangu_Troll_Trap"/>
                 <element value="_trolltrap"/>
             </property>
         </properties>
