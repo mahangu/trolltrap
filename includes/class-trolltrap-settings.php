@@ -37,6 +37,108 @@ class Mahangu_Troll_Trap_Settings {
 
 		// POST endpoint for "Regenerate AI rewrite" per-comment button.
 		add_action( 'admin_post_trolltrap_regenerate_ai', array( $this, 'handle_regenerate_ai' ) );
+
+		// Troll Trap stats widget on the admin Dashboard.
+		add_action( 'wp_dashboard_setup', array( $this, 'register_dashboard_widget' ) );
+	}
+
+
+	/**
+	 * Register the Troll Trap dashboard widget. Visible to anyone who can
+	 * moderate comments, so editors and admins see the same stats.
+	 */
+	public function register_dashboard_widget() {
+
+		if ( ! current_user_can( 'moderate_comments' ) ) {
+			return;
+		}
+
+		wp_add_dashboard_widget(
+			'trolltrap_dashboard',
+			__( 'Troll Trap', 'troll-trap' ),
+			array( $this, 'render_dashboard_widget' )
+		);
+	}
+
+
+	/**
+	 * Render the Troll Trap dashboard widget body. Reads commentmeta directly
+	 * in one GROUP BY plus one allowlist count, so the widget stays cheap
+	 * even on sites with a long comment history.
+	 */
+	public function render_dashboard_widget() {
+
+		global $wpdb;
+
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT meta_value AS filter_slug, COUNT(*) AS comment_count FROM {$wpdb->commentmeta} WHERE meta_key = %s AND meta_value != %s GROUP BY meta_value ORDER BY comment_count DESC",
+				'_trolltrap_filter',
+				'none'
+			),
+			ARRAY_A
+		);
+
+		$allowlisted = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->commentmeta} WHERE meta_key = %s",
+				'_trolltrap_allowed'
+			)
+		);
+
+		$total_trapped = 0;
+		foreach ( (array) $rows as $row ) {
+			$total_trapped += (int) $row['comment_count'];
+		}
+
+		printf(
+			'<p style="font-size: 1.1em; margin-top: 0;"><strong>%s</strong></p>',
+			esc_html(
+				sprintf(
+					/* translators: %s: number of trapped comments. */
+					_n( '%s comment is currently trapped.', '%s comments are currently trapped.', $total_trapped, 'troll-trap' ),
+					number_format_i18n( $total_trapped )
+				)
+			)
+		);
+
+		if ( ! empty( $rows ) ) {
+			print '<ul style="margin: 0 0 1em 0;">';
+			foreach ( $rows as $row ) {
+				$slug   = (string) $row['filter_slug'];
+				$count  = (int) $row['comment_count'];
+				$filter = $this->filters->get( $slug );
+				$name   = ( $filter && isset( $filter['name'] ) ) ? (string) $filter['name'] : $slug;
+
+				printf(
+					'<li style="margin: 2px 0;">%1$s &mdash; %2$s</li>',
+					esc_html( $name ),
+					esc_html( number_format_i18n( $count ) )
+				);
+			}
+			print '</ul>';
+		}
+
+		if ( $allowlisted > 0 ) {
+			printf(
+				'<p>%s</p>',
+				esc_html(
+					sprintf(
+						/* translators: %s: number of allowlisted comments. */
+						_n( '%s comment has been allowlisted.', '%s comments have been allowlisted.', $allowlisted, 'troll-trap' ),
+						number_format_i18n( $allowlisted )
+					)
+				)
+			);
+		}
+
+		printf(
+			'<p><a href="%1$s">%2$s</a> &nbsp;|&nbsp; <a href="%3$s">%4$s</a></p>',
+			esc_url( admin_url( 'edit-comments.php' ) ),
+			esc_html__( 'Review trapped comments', 'troll-trap' ),
+			esc_url( admin_url( 'options-discussion.php#trolltrap' ) ),
+			esc_html__( 'Settings', 'troll-trap' )
+		);
 	}
 
 
