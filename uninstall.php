@@ -31,6 +31,7 @@ function trolltrap_uninstall_site() {
 	delete_metadata( 'comment', 0, '_trolltrap_match_count', '', true );
 	delete_metadata( 'comment', 0, '_trolltrap_matched_keywords', '', true );
 	delete_metadata( 'comment', 0, '_trolltrap_llm_text', '', true );
+	delete_metadata( 'comment', 0, '_trolltrap_llm_attempts', '', true );
 
 	// Drop any queued AI rewrite jobs.
 	wp_clear_scheduled_hook( 'trolltrap_ai_transform' );
