@@ -129,6 +129,20 @@ class Mahangu_Troll_Trap {
 			return;
 		}
 
+		// An allowlist match short-circuits graylist matching: trusted
+		// commenters can mention a graylisted keyword without being trapped.
+		$allow_hit = self::match_keywords( $comment, self::allowed_from_option() );
+
+		if ( ! empty( $allow_hit ) ) {
+			update_comment_meta( $comment_id, '_trolltrap_filter', 'none' );
+			update_comment_meta( $comment_id, '_trolltrap_match_count', 0 );
+			update_comment_meta( $comment_id, '_trolltrap_matched_keywords', array() );
+			update_comment_meta( $comment_id, '_trolltrap_allowed', $allow_hit );
+			return;
+		}
+
+		delete_comment_meta( $comment_id, '_trolltrap_allowed' );
+
 		$matched     = self::match_keywords( $comment, self::words_from_option() );
 		$match_count = count( $matched );
 
@@ -189,7 +203,31 @@ class Mahangu_Troll_Trap {
 	 */
 	public static function words_from_option() {
 
-		$raw = (string) get_option( 'trolltrap_words', '' );
+		return self::lines_from_option( 'trolltrap_words' );
+	}
+
+
+	/**
+	 * Parse the stored allowlist option (one keyword/email/IP per line) into a
+	 * clean array, dropping empty lines and whitespace.
+	 *
+	 * @return string[]
+	 */
+	public static function allowed_from_option() {
+
+		return self::lines_from_option( 'trolltrap_allowed' );
+	}
+
+
+	/**
+	 * Generic helper to read a newline-separated option as a clean string array.
+	 *
+	 * @param string $option_name Option key.
+	 * @return string[]
+	 */
+	private static function lines_from_option( $option_name ) {
+
+		$raw = (string) get_option( $option_name, '' );
 
 		return array_values(
 			array_filter(
