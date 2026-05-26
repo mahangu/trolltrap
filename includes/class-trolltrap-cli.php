@@ -16,6 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *     wp trolltrap mark 42 --filter=zalgo
  *     wp trolltrap untrap 42
  *     wp trolltrap reevaluate 42
+ *     wp trolltrap regenerate-ai 42
  *     wp trolltrap status 42
  *     wp trolltrap filters
  */
@@ -120,6 +121,37 @@ class Mahangu_Troll_Trap_CLI {
 		$count = (int) get_comment_meta( $comment_id, '_trolltrap_match_count', true );
 
 		WP_CLI::success( sprintf( 'Comment %d re-evaluated: filter=%s, matches=%d.', $comment_id, $slug, $count ) );
+	}
+
+	/**
+	 * Regenerate the AI rewrite for a comment.
+	 *
+	 * Drops the cached rewrite and re-queues the wp-cron job so a fresh
+	 * rewrite is requested. Unlike `reevaluate`, this does not re-run the
+	 * graylist matcher; the assigned filter is left alone. Intended for
+	 * comments already on the 'llm' filter that got an off-style result.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <comment-id>
+	 * : The ID of the comment to regenerate.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp trolltrap regenerate-ai 42
+	 *
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Flag arguments (unused).
+	 */
+	public function regenerate_ai( $args, $assoc_args ) {
+
+		unset( $assoc_args );
+
+		$comment_id = $this->require_comment( $args );
+
+		mahangu_troll_trap()->ai->regenerate( $comment_id );
+
+		WP_CLI::success( sprintf( 'Comment %d AI rewrite cache cleared and refresh queued.', $comment_id ) );
 	}
 
 	/**
