@@ -4,7 +4,7 @@ Tags: comments, comment-moderation, moderation, anti-spam, troll
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0-alpha.2
+Stable tag: 1.0.0-alpha.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,13 @@ Only users who can moderate comments (Editors and Administrators by default).
 3. Trapped comments as they appear to site visitors, beside untouched ones.
 
 == Changelog ==
+
+= 1.0.0-alpha.3 =
+* Add a per-comment "Regenerate AI rewrite" button in the Troll Trap Filter column so a stuck or off-style rewrite can be redone without touching anything else.
+* Add a matching wp trolltrap regenerate-ai &lt;comment-id&gt; WP-CLI command.
+* Retry AI rewrites automatically on transient API failures (429, 408, 5xx, network errors) with bounded backoff (60s, 300s, 900s, max 3 attempts).
+* Surface the new "AI rewrite failed after retries" state in the Comments column and in wp trolltrap status, with a clear hint to use Regenerate.
+* Harden per-comment admin-post endpoints by requiring POST.
 
 = 1.0.0-alpha.2 =
 * Preview every registered filter, applied to a sample sentence, beneath the Default Filter selector on Settings &gt; Discussion.
