@@ -183,8 +183,12 @@ class Mahangu_Troll_Trap_CLI {
 		$kws   = get_comment_meta( $comment_id, '_trolltrap_matched_keywords', true );
 		if ( 'llm' !== $slug ) {
 			$ai = 'n/a';
+		} elseif ( null !== $tt->ai->cached_text( $comment_id ) ) {
+			$ai = 'ready';
+		} elseif ( $tt->ai->has_failed( $comment_id ) ) {
+			$ai = 'failed';
 		} else {
-			$ai = ( null !== $tt->ai->cached_text( $comment_id ) ) ? 'ready' : 'pending';
+			$ai = 'pending';
 		}
 
 		$row = array(

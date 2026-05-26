@@ -152,6 +152,24 @@ class Mahangu_Troll_Trap_AI {
 	}
 
 	/**
+	 * Whether the cron handler has exhausted its automatic retry budget for
+	 * this comment without producing a cached rewrite. When true, the front
+	 * end is permanently on the fallback filter until an admin asks for a
+	 * fresh attempt via the Regenerate button or the CLI command.
+	 *
+	 * @param int $comment_id Comment ID.
+	 * @return bool
+	 */
+	public function has_failed( $comment_id ) {
+
+		if ( null !== $this->cached_text( $comment_id ) ) {
+			return false;
+		}
+
+		return (int) get_comment_meta( $comment_id, '_trolltrap_llm_attempts', true ) >= self::MAX_ATTEMPTS;
+	}
+
+	/**
 	 * Schedule the rewrite of a comment when it is assigned the 'llm' filter.
 	 *
 	 * @param int    $meta_id     Meta row ID (unused).
