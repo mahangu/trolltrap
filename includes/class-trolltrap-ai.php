@@ -166,6 +166,10 @@ class Mahangu_Troll_Trap_AI {
 
 		delete_comment_meta( $comment_id, '_trolltrap_llm_text' );
 
+		// schedule() no-ops if a cron event for this comment is already queued.
+		// That is fine: the queued event will fire, run_transform will see an
+		// empty cache, and make a fresh API call. Worst case is the wait time
+		// for the existing cron tick rather than an immediate refresh.
 		$this->schedule( $comment_id );
 
 		return true;

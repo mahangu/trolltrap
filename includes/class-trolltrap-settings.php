@@ -583,6 +583,10 @@ class Mahangu_Troll_Trap_Settings {
 	 */
 	public function handle_set_filter() {
 
+		if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
+			wp_die( esc_html__( 'POST is required.', 'troll-trap' ), 405 );
+		}
+
 		if ( ! current_user_can( 'moderate_comments' ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'troll-trap' ), 403 );
 		}
@@ -624,6 +628,10 @@ class Mahangu_Troll_Trap_Settings {
 	 * shot without touching the comment or the AI settings.
 	 */
 	public function handle_regenerate_ai() {
+
+		if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
+			wp_die( esc_html__( 'POST is required.', 'troll-trap' ), 405 );
+		}
 
 		if ( ! current_user_can( 'moderate_comments' ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'troll-trap' ), 403 );
