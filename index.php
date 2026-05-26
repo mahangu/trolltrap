@@ -6,7 +6,7 @@ Description:       Selectively filter and obfuscate comments based on keywords â
 Version:           1.0.0-alpha.1
 Requires at least: 6.5
 Requires PHP:      8.0
-Author:            Mahangu Weerasighe
+Author:            Mahangu Weerasinghe
 Author URI:        https://mahangu.wordpress.com
 License:           GPLv2 or later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
