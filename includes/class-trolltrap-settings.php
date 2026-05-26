@@ -491,6 +491,20 @@ class Mahangu_Troll_Trap_Settings {
 				)
 			);
 		}
+
+		if ( 'llm' === $comment_meta ) {
+
+			$tt = mahangu_troll_trap();
+
+			$status = ( $tt && $tt->ai && null !== $tt->ai->cached_text( $comment_id ) )
+				? __( 'AI rewrite ready.', 'troll-trap' )
+				: __( 'AI rewrite pending; showing the fallback filter.', 'troll-trap' );
+
+			printf(
+				'<p class="description" style="margin: 4px 0 0;">%s</p>',
+				esc_html( $status )
+			);
+		}
 	}
 
 
