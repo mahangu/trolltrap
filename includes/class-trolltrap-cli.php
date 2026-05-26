@@ -321,10 +321,10 @@ class Mahangu_Troll_Trap_CLI {
 		// Stream comments newest-first so the table favors recent activity.
 		global $wpdb;
 
-		$rows           = array();
-		$matched_count  = 0;
-		$last_id        = PHP_INT_MAX;
-		$batch_size     = 200;
+		$rows          = array();
+		$matched_count = 0;
+		$last_id       = PHP_INT_MAX;
+		$batch_size    = 200;
 
 		while ( true ) {
 
