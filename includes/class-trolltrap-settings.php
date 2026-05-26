@@ -309,13 +309,14 @@ class Mahangu_Troll_Trap_Settings {
 	public function register_bulk_actions( $bulk_actions ) {
 		$bulk_actions['mark_as_troll'] = __( 'Mark as Troll', 'troll-trap' );
 		$bulk_actions['untrap']        = __( 'Untrap (clear filter)', 'troll-trap' );
+		$bulk_actions['reevaluate']    = __( 'Re-evaluate against graylist', 'troll-trap' );
 		return $bulk_actions;
 	}
 
 
 	public function handle_bulk_actions( $redirect_to, $doaction, $comment_ids ) {
 
-		if ( 'mark_as_troll' !== $doaction && 'untrap' !== $doaction ) {
+		if ( 'mark_as_troll' !== $doaction && 'untrap' !== $doaction && 'reevaluate' !== $doaction ) {
 			return $redirect_to;
 		}
 
@@ -343,6 +344,20 @@ class Mahangu_Troll_Trap_Settings {
 			return add_query_arg( 'bulk_troll_comments', count( $comment_ids ), $redirect_to );
 		}
 
+		if ( 'reevaluate' === $doaction ) {
+
+			$tt = mahangu_troll_trap();
+
+			foreach ( $comment_ids as $comment_id ) {
+				$cid = absint( $comment_id );
+				if ( $cid && get_comment( $cid ) ) {
+					$tt->comments_tag( $cid );
+				}
+			}
+
+			return add_query_arg( 'bulk_reevaluate_comments', count( $comment_ids ), $redirect_to );
+		}
+
 		// 'untrap' — clear the filter on selected comments.
 		foreach ( $comment_ids as $comment_id ) {
 			update_comment_meta( absint( $comment_id ), '_trolltrap_filter', 'none' );
@@ -355,8 +370,9 @@ class Mahangu_Troll_Trap_Settings {
 	public function handle_bulk_actions_notice() {
 
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Read-only counts for a post-redirect admin notice; the originating bulk action verified the nonce.
-		$trolled   = isset( $_REQUEST['bulk_troll_comments'] ) ? intval( $_REQUEST['bulk_troll_comments'] ) : 0;
-		$untrapped = isset( $_REQUEST['bulk_untrap_comments'] ) ? intval( $_REQUEST['bulk_untrap_comments'] ) : 0;
+		$trolled     = isset( $_REQUEST['bulk_troll_comments'] ) ? intval( $_REQUEST['bulk_troll_comments'] ) : 0;
+		$untrapped   = isset( $_REQUEST['bulk_untrap_comments'] ) ? intval( $_REQUEST['bulk_untrap_comments'] ) : 0;
+		$reevaluated = isset( $_REQUEST['bulk_reevaluate_comments'] ) ? intval( $_REQUEST['bulk_reevaluate_comments'] ) : 0;
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
 		if ( $trolled > 0 ) {
@@ -390,6 +406,24 @@ class Mahangu_Troll_Trap_Settings {
 							'troll-trap'
 						),
 						number_format_i18n( $untrapped )
+					)
+				)
+			);
+		}
+
+		if ( $reevaluated > 0 ) {
+			printf(
+				'<div id="message" class="updated fade"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %s: number of comments. */
+						_n(
+							'Re-evaluated %s comment against the graylist.',
+							'Re-evaluated %s comments against the graylist.',
+							$reevaluated,
+							'troll-trap'
+						),
+						number_format_i18n( $reevaluated )
 					)
 				)
 			);
