@@ -599,7 +599,7 @@ class Mahangu_Troll_Trap_AI {
 	 * @return string
 	 */
 	public function test_sample() {
-		return 'Your comment is rude and unwelcome here.';
+		return __( 'Your comment is rude and unwelcome here.', 'troll-trap' );
 	}
 
 	/**
