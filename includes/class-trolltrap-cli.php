@@ -73,9 +73,12 @@ class Mahangu_Troll_Trap_CLI {
 	 *
 	 *     wp trolltrap untrap 42
 	 *
-	 * @param array $args Positional arguments.
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Flag arguments (unused).
 	 */
-	public function untrap( $args ) {
+	public function untrap( $args, $assoc_args ) {
+
+		unset( $assoc_args );
 
 		$comment_id = $this->require_comment( $args );
 
@@ -100,9 +103,12 @@ class Mahangu_Troll_Trap_CLI {
 	 *
 	 *     wp trolltrap reevaluate 42
 	 *
-	 * @param array $args Positional arguments.
+	 * @param array $args       Positional arguments.
+	 * @param array $assoc_args Flag arguments (unused).
 	 */
-	public function reevaluate( $args ) {
+	public function reevaluate( $args, $assoc_args ) {
+
+		unset( $assoc_args );
 
 		$comment_id = $this->require_comment( $args );
 
@@ -143,7 +149,11 @@ class Mahangu_Troll_Trap_CLI {
 		$slug  = (string) get_comment_meta( $comment_id, '_trolltrap_filter', true );
 		$count = (int) get_comment_meta( $comment_id, '_trolltrap_match_count', true );
 		$kws   = get_comment_meta( $comment_id, '_trolltrap_matched_keywords', true );
-		$ai    = ( 'llm' === $slug && null !== $tt->ai->cached_text( $comment_id ) ) ? 'ready' : ( 'llm' === $slug ? 'pending' : 'n/a' );
+		if ( 'llm' !== $slug ) {
+			$ai = 'n/a';
+		} else {
+			$ai = ( null !== $tt->ai->cached_text( $comment_id ) ) ? 'ready' : 'pending';
+		}
 
 		$row = array(
 			'comment_id'        => $comment_id,
