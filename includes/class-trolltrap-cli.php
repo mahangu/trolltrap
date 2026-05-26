@@ -48,7 +48,7 @@ class Mahangu_Troll_Trap_CLI {
 
 		$tt      = mahangu_troll_trap();
 		$slug    = isset( $assoc_args['filter'] ) ? sanitize_key( $assoc_args['filter'] ) : '';
-		$allowed = array_keys( $tt->filters->transforming() );
+		$allowed = array_keys( $tt->filters->enabled() );
 
 		if ( '' === $slug ) {
 			$slug = (string) get_option( 'trolltrap_default_filter', 'piglatin' );

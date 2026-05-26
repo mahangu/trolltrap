@@ -104,6 +104,28 @@ class Mahangu_Troll_Trap_Filters {
 	}
 
 	/**
+	 * Transforming filters that have not been disabled via the
+	 * trolltrap_disabled_filters option. Used by every UI surface that
+	 * offers the admin a NEW filter choice (Default Filter, severity
+	 * ladder, AI fallback). Already-assigned filters continue to work via
+	 * apply() regardless of whether they appear in this list, so historical
+	 * comments tagged with a disabled filter still render correctly.
+	 *
+	 * @return array[]
+	 */
+	public function enabled() {
+
+		$disabled = (array) get_option( 'trolltrap_disabled_filters', array() );
+
+		return array_filter(
+			$this->transforming(),
+			static function ( $filter ) use ( $disabled ) {
+				return ! in_array( $filter['slug'], $disabled, true );
+			}
+		);
+	}
+
+	/**
 	 * Apply a registered filter to a string.
 	 *
 	 * Unknown slugs, and filters registered without a callback, return the text
