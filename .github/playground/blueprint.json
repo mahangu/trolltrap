@@ -71,7 +71,7 @@
     },
     {
       "step": "runPHP",
-      "code": "<?php require_once '/wordpress/wp-load.php'; require_once '/wordpress/wp-content/plugins/troll-trap/includes/class-trolltrap-cli.php'; if ( ! class_exists( 'Mahangu_Troll_Trap_CLI' ) ) { echo 'FAIL: CLI class not defined after require' . PHP_EOL; exit( 1 ); } $ref = new ReflectionClass( 'Mahangu_Troll_Trap_CLI' ); foreach ( array( 'mark', 'untrap', 'reevaluate', 'status', 'filters' ) as $method ) { if ( ! $ref->hasMethod( $method ) ) { echo 'FAIL: CLI missing expected command method: ' . $method . PHP_EOL; exit( 1 ); } $m = $ref->getMethod( $method ); if ( ! $m->isPublic() ) { echo 'FAIL: CLI method should be public: ' . $method . PHP_EOL; exit( 1 ); } } echo 'OK: CLI class loads with mark, untrap, reevaluate, status, filters commands' . PHP_EOL;"
+      "code": "<?php require_once '/wordpress/wp-load.php'; require_once '/wordpress/wp-content/plugins/troll-trap/includes/class-trolltrap-cli.php'; if ( ! class_exists( 'Mahangu_Troll_Trap_CLI' ) ) { echo 'FAIL: CLI class not defined after require' . PHP_EOL; exit( 1 ); } $ref = new ReflectionClass( 'Mahangu_Troll_Trap_CLI' ); foreach ( array( 'mark', 'untrap', 'reevaluate', 'regenerate_ai', 'status', 'filters' ) as $method ) { if ( ! $ref->hasMethod( $method ) ) { echo 'FAIL: CLI missing expected command method: ' . $method . PHP_EOL; exit( 1 ); } $m = $ref->getMethod( $method ); if ( ! $m->isPublic() ) { echo 'FAIL: CLI method should be public: ' . $method . PHP_EOL; exit( 1 ); } } echo 'OK: CLI class loads with mark, untrap, reevaluate, status, filters commands' . PHP_EOL;"
     },
     {
       "step": "runPHP",
