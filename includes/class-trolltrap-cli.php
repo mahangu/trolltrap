@@ -102,7 +102,7 @@ class Mahangu_Troll_Trap_CLI {
 	 *
 	 * [--all]
 	 * : Re-evaluate every comment on the site, in batches. Mutually exclusive
-	 * : with a positional ID.
+	 *   with a positional comment ID.
 	 *
 	 * [--batch-size=<n>]
 	 * : With --all, the number of comments to fetch per batch (default 200).
@@ -150,17 +150,21 @@ class Mahangu_Troll_Trap_CLI {
 
 		$progress = WP_CLI\Utils\make_progress_bar( sprintf( 'Re-evaluating %d comments', $total ), $total );
 
-		$offset    = 0;
+		// Keyset-paginate by comment_ID so concurrent deletions during a long
+		// run cannot cause us to skip comments at a batch boundary the way
+		// offset/limit pagination would.
+		global $wpdb;
+
+		$last_id   = 0;
 		$processed = 0;
 
 		while ( true ) {
 
-			$ids = get_comments(
-				array(
-					'fields' => 'ids',
-					'number' => $batch_size,
-					'offset' => $offset,
-					'order'  => 'ASC',
+			$ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT comment_ID FROM {$wpdb->comments} WHERE comment_ID > %d ORDER BY comment_ID ASC LIMIT %d",
+					$last_id,
+					$batch_size
 				)
 			);
 
@@ -169,13 +173,13 @@ class Mahangu_Troll_Trap_CLI {
 			}
 
 			foreach ( $ids as $cid ) {
+				$cid = (int) $cid;
 				delete_comment_meta( $cid, '_trolltrap_llm_text' );
 				$tt->comments_tag( $cid );
 				$processed++;
 				$progress->tick();
+				$last_id = $cid;
 			}
-
-			$offset += $batch_size;
 		}
 
 		$progress->finish();
