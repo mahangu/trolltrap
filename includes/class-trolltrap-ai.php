@@ -64,6 +64,11 @@ class Mahangu_Troll_Trap_AI {
 		add_action( 'added_comment_meta', array( $this, 'maybe_schedule' ), 10, 4 );
 		add_action( 'updated_comment_meta', array( $this, 'maybe_schedule' ), 10, 4 );
 
+		// When a moderator edits a comment that is currently on the AI
+		// filter, the cached rewrite no longer reflects the comment content.
+		// Drop the cache and re-queue so the rendered text catches up.
+		add_action( 'edit_comment', array( $this, 'maybe_invalidate_on_edit' ) );
+
 		// "Send a test rewrite" panel and handler on Settings > Discussion.
 		add_action( 'admin_footer-options-discussion.php', array( $this, 'render_test_rewrite_panel' ) );
 		add_action( 'admin_post_trolltrap_ai_test_rewrite', array( $this, 'handle_test_rewrite' ) );
@@ -186,6 +191,30 @@ class Mahangu_Troll_Trap_AI {
 		if ( '_trolltrap_filter' === $meta_key && 'llm' === $meta_value ) {
 			$this->schedule( $comment_id );
 		}
+	}
+
+	/**
+	 * edit_comment hook: invalidate the cached AI rewrite when a comment on
+	 * the AI filter has been edited, so the rendered output catches up with
+	 * the new content. Quietly no-ops for non-AI-tagged comments.
+	 *
+	 * @param int $comment_id Comment ID.
+	 */
+	public function maybe_invalidate_on_edit( $comment_id ) {
+
+		$comment_id = absint( $comment_id );
+
+		if ( ! $comment_id ) {
+			return;
+		}
+
+		$filter = get_comment_meta( $comment_id, '_trolltrap_filter', true );
+
+		if ( 'llm' !== $filter ) {
+			return;
+		}
+
+		$this->regenerate( $comment_id );
 	}
 
 	/**
