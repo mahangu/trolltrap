@@ -624,14 +624,17 @@ class Mahangu_Troll_Trap_AI {
 	}
 
 	/**
-	 * Send the test sample through the configured Anthropic API key, model,
-	 * and style. Exposed as a testable seam so the admin-post handler stays
+	 * Send a sample through the configured Anthropic API key, model, and
+	 * style. Exposed as a testable seam so the admin-post handler stays
 	 * thin (it just adapts this to nonce + transient + redirect).
 	 *
+	 * @param string $sample Sentence to rewrite. Defaults to the built-in
+	 *                       test_sample() when empty so callers can pass an
+	 *                       untrusted value through without their own fallback.
 	 * @return array{status:string,text:?string} Same shape as request(), plus
 	 *                                          'unavailable' when AI is off.
 	 */
-	public function test_rewrite() {
+	public function test_rewrite( $sample = '' ) {
 
 		if ( ! $this->is_available() ) {
 			return array(
@@ -640,7 +643,13 @@ class Mahangu_Troll_Trap_AI {
 			);
 		}
 
-		return $this->request( $this->test_sample() );
+		$sample = trim( (string) $sample );
+
+		if ( '' === $sample ) {
+			$sample = $this->test_sample();
+		}
+
+		return $this->request( $sample );
 	}
 
 	/**
@@ -661,7 +670,15 @@ class Mahangu_Troll_Trap_AI {
 
 		check_admin_referer( 'trolltrap_ai_test_rewrite' );
 
-		$result = $this->test_rewrite();
+		$sample = isset( $_POST['trolltrap_ai_test_sample'] )
+			? sanitize_text_field( wp_unslash( $_POST['trolltrap_ai_test_sample'] ) )
+			: '';
+
+		$result = $this->test_rewrite( $sample );
+
+		// Keep the submitted sample alongside the result so the panel can
+		// echo it back to the admin who triggered the test.
+		$result['sample'] = '' !== $sample ? $sample : $this->test_sample();
 
 		set_transient( 'trolltrap_ai_test_result_' . get_current_user_id(), $result, 60 );
 
@@ -690,13 +707,7 @@ class Mahangu_Troll_Trap_AI {
 		printf( '<h2 style="margin-top: 0;">%s</h2>', esc_html__( 'Troll Trap AI: Send a test rewrite', 'troll-trap' ) );
 		printf(
 			'<p>%s</p>',
-			esc_html(
-				sprintf(
-					/* translators: %s: sample sentence. */
-					__( 'Sends "%s" to the Anthropic API using your saved key, model, and style. Save changes first if you have just edited any AI settings.', 'troll-trap' ),
-					$this->test_sample()
-				)
-			)
+			esc_html__( 'Sends a sample sentence to the Anthropic API using your saved key, model, and style. Save changes first if you have just edited any AI settings.', 'troll-trap' )
 		);
 
 		$result = get_transient( $key );
@@ -704,6 +715,14 @@ class Mahangu_Troll_Trap_AI {
 		if ( is_array( $result ) ) {
 
 			delete_transient( $key );
+
+			$sample_used = isset( $result['sample'] ) ? (string) $result['sample'] : $this->test_sample();
+
+			printf(
+				'<p style="margin: 0 0 8px;"><strong>%1$s</strong><br><code style="display: block; padding: 8px; background: #f6f7f7; word-break: break-word;">%2$s</code></p>',
+				esc_html__( 'Sample sent:', 'troll-trap' ),
+				esc_html( $sample_used )
+			);
 
 			if ( 'ok' === $result['status'] && ! empty( $result['text'] ) ) {
 				printf(
@@ -735,6 +754,13 @@ class Mahangu_Troll_Trap_AI {
 		);
 		print '<input type="hidden" name="action" value="trolltrap_ai_test_rewrite">';
 		wp_nonce_field( 'trolltrap_ai_test_rewrite' );
+
+		printf(
+			'<p><label for="trolltrap_ai_test_sample">%1$s</label><br><input type="text" id="trolltrap_ai_test_sample" name="trolltrap_ai_test_sample" class="regular-text" placeholder="%2$s" maxlength="500"></p>',
+			esc_html__( 'Sample sentence to rewrite (optional):', 'troll-trap' ),
+			esc_attr( $this->test_sample() )
+		);
+
 		printf(
 			'<button type="submit" class="button button-secondary">%s</button>',
 			esc_html__( 'Send a test rewrite', 'troll-trap' )
