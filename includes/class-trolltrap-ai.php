@@ -258,7 +258,13 @@ class Mahangu_Troll_Trap_AI {
 
 			if ( $attempts < self::MAX_ATTEMPTS ) {
 				update_comment_meta( $comment_id, '_trolltrap_llm_attempts', $attempts );
-				$delay = isset( self::$backoff_seconds[ $attempts ] ) ? self::$backoff_seconds[ $attempts ] : 900;
+				$delay = isset( self::$backoff_seconds[ $attempts ] ) ? self::$backoff_seconds[ $attempts ] : end( self::$backoff_seconds );
+
+				// WordPress' wp_schedule_single_event dedupes events with the
+				// same hook+args within a 10-minute window. Clear any older
+				// queued event for this comment first so the backoff timestamp
+				// we are about to set is the one that actually fires.
+				wp_clear_scheduled_hook( self::CRON_HOOK, array( $comment_id ) );
 				wp_schedule_single_event( time() + $delay, self::CRON_HOOK, array( $comment_id ) );
 				return;
 			}
@@ -341,7 +347,10 @@ class Mahangu_Troll_Trap_AI {
 		$code = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( 200 !== $code ) {
-			$transient = ( 429 === $code || ( $code >= 500 && $code <= 599 ) );
+			// 408 Request Timeout and 429 Too Many Requests are canonically
+			// retryable, as is any 5xx. Other 4xx (401 bad key, 400 malformed,
+			// 403 forbidden, ...) won't fix themselves by retrying.
+			$transient = ( 408 === $code || 429 === $code || ( $code >= 500 && $code <= 599 ) );
 			return array(
 				'status' => $transient ? 'transient' : 'permanent',
 				'text'   => null,
