@@ -471,6 +471,26 @@ class Mahangu_Troll_Trap_Settings {
 		);
 
 		print '</form>';
+
+		$match_count = (int) get_comment_meta( $comment_id, '_trolltrap_match_count', true );
+
+		if ( $match_count > 0 ) {
+			printf(
+				'<p class="description" style="margin: 4px 0 0;">%s</p>',
+				esc_html(
+					sprintf(
+						/* translators: %s: number of graylist keywords matched. */
+						_n(
+							'Matched %s graylist keyword.',
+							'Matched %s graylist keywords.',
+							$match_count,
+							'troll-trap'
+						),
+						number_format_i18n( $match_count )
+					)
+				)
+			);
+		}
 	}
 
 
