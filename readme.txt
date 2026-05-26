@@ -4,7 +4,7 @@ Tags: comments, comment-moderation, moderation, anti-spam, troll
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0-alpha.5
+Stable tag: 1.0.0-alpha.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,12 @@ Only users who can moderate comments (Editors and Administrators by default).
 3. Trapped comments as they appear to site visitors, beside untouched ones.
 
 == Changelog ==
+
+= 1.0.0-alpha.6 =
+* Add a Troll Trap widget on the admin Dashboard showing how many comments are currently trapped, broken down by filter, plus an allowlisted count.
+* Add CSS classes (trolltrap-trapped, trolltrap-filter-&lt;slug&gt;, trolltrap-ai-failed) on the comment wrapper so themes can style trapped comments distinctly.
+* Add wp trolltrap stats for an at-a-glance filter breakdown from the command line.
+* Add wp trolltrap dry-run-allowlist mirroring the existing graylist dry-run, for testing trusted-author candidates without saving them.
 
 = 1.0.0-alpha.5 =
 * Add a Comment Allowlist that lets trusted authors, emails, URLs, IPs, or user-agent fragments bypass the graylist entirely. Matched only against author identity, never the comment body, so it cannot be bypassed by quoting a trusted identifier in a comment.
