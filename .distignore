@@ -6,4 +6,5 @@
 .wordpress-org
 phpcs.xml.dist
 README.md
+CONTRIBUTING.md
 build
