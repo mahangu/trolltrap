@@ -222,12 +222,9 @@ class Mahangu_Troll_Trap_Settings {
 		$sample = __( 'Your comment is rude and unwelcome here.', 'troll-trap' );
 
 		printf(
-			'<p class="description" style="margin-top: 1em;">%s</p>',
-			sprintf(
-				/* translators: %s: the sample sentence used in the filter previews, wrapped in <em>. */
-				esc_html__( 'Preview of each filter, applied to: %s', 'troll-trap' ),
-				'<em>' . esc_html( $sample ) . '</em>'
-			)
+			'<p class="description" style="margin-top: 1em;">%1$s <em>%2$s</em></p>',
+			esc_html__( 'Preview of each filter, applied to:', 'troll-trap' ),
+			esc_html( $sample )
 		);
 
 		print '<table class="widefat striped" style="max-width: 720px; margin-top: 0.5em;">';
@@ -239,8 +236,7 @@ class Mahangu_Troll_Trap_Settings {
 
 		foreach ( $this->filters->transforming() as $filter ) {
 
-			$registered = $this->filters->get( $filter['slug'] );
-			if ( null === $registered || null === $registered['callback'] ) {
+			if ( null === $filter['callback'] ) {
 				continue;
 			}
 
