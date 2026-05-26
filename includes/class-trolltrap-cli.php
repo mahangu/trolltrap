@@ -636,8 +636,13 @@ class Mahangu_Troll_Trap_CLI {
 	 * --file=<path>
 	 * : Path to a JSON file produced by export-settings. Required.
 	 *
+	 * [--dry-run]
+	 * : Print what would change without applying any updates. Each option is
+	 *   reported as 'unchanged', 'changed', or 'unknown'.
+	 *
 	 * ## EXAMPLES
 	 *
+	 *     wp trolltrap import-settings --file=trolltrap.json --dry-run
 	 *     wp trolltrap import-settings --file=trolltrap.json
 	 *
 	 * @param array $args       Positional arguments (unused).
@@ -669,22 +674,59 @@ class Mahangu_Troll_Trap_CLI {
 			WP_CLI::error( 'File is not a valid trolltrap settings export (missing options array).' );
 		}
 
-		$known   = array_flip( $this->exportable_options() );
-		$applied = 0;
-		$skipped = 0;
-		$unknown = array();
+		$dry_run = ! empty( $assoc_args['dry-run'] );
+
+		$known     = array_flip( $this->exportable_options() );
+		$applied   = 0;
+		$unchanged = 0;
+		$skipped   = 0;
+		$unknown   = array();
 
 		foreach ( $payload['options'] as $name => $value ) {
+
 			if ( ! isset( $known[ $name ] ) ) {
 				$unknown[] = (string) $name;
 				++$skipped;
 				continue;
 			}
-			update_option( $name, $value );
+
+			$current = get_option( $name );
+
+			if ( $current === $value ) {
+				++$unchanged;
+				if ( $dry_run ) {
+					WP_CLI::log( sprintf( 'unchanged: %s', $name ) );
+				}
+				continue;
+			}
+
+			if ( $dry_run ) {
+				WP_CLI::log( sprintf( 'changed:   %s', $name ) );
+			} else {
+				update_option( $name, $value );
+			}
 			++$applied;
 		}
 
-		WP_CLI::success( sprintf( 'Imported %d option(s); skipped %d unknown key(s).', $applied, $skipped ) );
+		if ( $dry_run ) {
+			WP_CLI::success(
+				sprintf(
+					'Dry run: %d option(s) would change, %d unchanged, %d unknown key(s) would be skipped.',
+					$applied,
+					$unchanged,
+					$skipped
+				)
+			);
+		} else {
+			WP_CLI::success(
+				sprintf(
+					'Imported %d option(s); %d unchanged; skipped %d unknown key(s).',
+					$applied,
+					$unchanged,
+					$skipped
+				)
+			);
+		}
 
 		if ( ! empty( $unknown ) ) {
 			WP_CLI::log( 'Skipped: ' . implode( ', ', $unknown ) );
