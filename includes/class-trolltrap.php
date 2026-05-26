@@ -129,6 +129,27 @@ class Mahangu_Troll_Trap {
 			return;
 		}
 
+		// An allowlist match short-circuits graylist matching: trusted
+		// commenters can mention a graylisted keyword without being trapped.
+		// Critically, this scans only the author identity fields (name, email,
+		// URL, IP, user agent) and NOT comment_content, so a troll cannot
+		// bypass by quoting a trusted email in their post body.
+		$allow_hit = self::match_keywords_in(
+			$comment,
+			self::allowed_from_option(),
+			self::allowlist_match_fields()
+		);
+
+		if ( ! empty( $allow_hit ) ) {
+			update_comment_meta( $comment_id, '_trolltrap_filter', 'none' );
+			update_comment_meta( $comment_id, '_trolltrap_match_count', 0 );
+			update_comment_meta( $comment_id, '_trolltrap_matched_keywords', array() );
+			update_comment_meta( $comment_id, '_trolltrap_allowed', $allow_hit );
+			return;
+		}
+
+		delete_comment_meta( $comment_id, '_trolltrap_allowed' );
+
 		$matched     = self::match_keywords( $comment, self::words_from_option() );
 		$match_count = count( $matched );
 
@@ -153,6 +174,29 @@ class Mahangu_Troll_Trap {
 	 */
 	public static function match_keywords( $comment, $words ) {
 
+		return self::match_keywords_in(
+			$comment,
+			$words,
+			array( 'comment_author', 'comment_author_email', 'comment_author_url', 'comment_content', 'comment_author_IP', 'comment_agent' )
+		);
+	}
+
+
+	/**
+	 * Like match_keywords, but restricted to a chosen subset of comment fields.
+	 * The graylist scans everything (including comment_content) on purpose;
+	 * the allowlist must NOT scan content, otherwise any commenter can
+	 * trivially bypass the graylist by quoting a trusted email or IP in their
+	 * comment body.
+	 *
+	 * @since 1.0.0
+	 * @param WP_Comment $comment Comment to test.
+	 * @param string[]   $words   Candidate keywords.
+	 * @param string[]   $fields  Comment property names to test against.
+	 * @return string[] The subset of $words that matched any of the listed fields.
+	 */
+	public static function match_keywords_in( $comment, $words, $fields ) {
+
 		$matched = array();
 
 		foreach ( (array) $words as $word ) {
@@ -165,19 +209,31 @@ class Mahangu_Troll_Trap {
 			// Escape so a '#' in the keyword cannot break the pattern delimiter.
 			$pattern = '#' . preg_quote( $word, '#' ) . '#i';
 
-			if (
-				preg_match( $pattern, $comment->comment_author )
-				|| preg_match( $pattern, $comment->comment_author_email )
-				|| preg_match( $pattern, $comment->comment_author_url )
-				|| preg_match( $pattern, $comment->comment_content )
-				|| preg_match( $pattern, $comment->comment_author_IP )
-				|| preg_match( $pattern, $comment->comment_agent )
-			) {
-				$matched[] = $word;
+			foreach ( (array) $fields as $field ) {
+				if ( ! isset( $comment->$field ) ) {
+					continue;
+				}
+				if ( preg_match( $pattern, (string) $comment->$field ) ) {
+					$matched[] = $word;
+					break;
+				}
 			}
 		}
 
 		return $matched;
+	}
+
+
+	/**
+	 * Comment fields the allowlist may match against. Deliberately excludes
+	 * comment_content, otherwise a troll could bypass the graylist by quoting
+	 * a trusted identifier (email, IP, URL, name) in their comment body.
+	 *
+	 * @return string[]
+	 */
+	public static function allowlist_match_fields() {
+
+		return array( 'comment_author', 'comment_author_email', 'comment_author_url', 'comment_author_IP', 'comment_agent' );
 	}
 
 
@@ -189,7 +245,31 @@ class Mahangu_Troll_Trap {
 	 */
 	public static function words_from_option() {
 
-		$raw = (string) get_option( 'trolltrap_words', '' );
+		return self::lines_from_option( 'trolltrap_words' );
+	}
+
+
+	/**
+	 * Parse the stored allowlist option (one keyword/email/IP per line) into a
+	 * clean array, dropping empty lines and whitespace.
+	 *
+	 * @return string[]
+	 */
+	public static function allowed_from_option() {
+
+		return self::lines_from_option( 'trolltrap_allowed' );
+	}
+
+
+	/**
+	 * Generic helper to read a newline-separated option as a clean string array.
+	 *
+	 * @param string $option_name Option key.
+	 * @return string[]
+	 */
+	private static function lines_from_option( $option_name ) {
+
+		$raw = (string) get_option( $option_name, '' );
 
 		return array_values(
 			array_filter(

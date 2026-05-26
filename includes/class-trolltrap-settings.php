@@ -66,6 +66,20 @@ class Mahangu_Troll_Trap_Settings {
 
 		register_setting(
 			'discussion',
+			'trolltrap_allowed',
+			array( 'sanitize_callback' => 'sanitize_textarea_field' )
+		);
+
+		add_settings_field(
+			'trolltrap_allowed',
+			__( 'Comment Allowlist', 'troll-trap' ),
+			array( $this, 'settings_form_allowed' ),
+			'discussion',
+			'trolltrap'
+		);
+
+		register_setting(
+			'discussion',
 			'trolltrap_default_filter',
 			array( 'sanitize_callback' => array( $this, 'sanitize_default_filter' ) )
 		);
@@ -169,6 +183,20 @@ class Mahangu_Troll_Trap_Settings {
 		printf(
 			'<textarea name="trolltrap_words" rows="10" cols="50" class="large-text code">%s</textarea>',
 			esc_textarea( get_option( 'trolltrap_words', '' ) )
+		);
+	}
+
+
+	public function settings_form_allowed() {
+
+		printf(
+			'<p><label for="trolltrap_allowed">%s</label></p>',
+			esc_html__( 'Trusted authors, emails, URLs, IP addresses, or user-agent fragments that should never be trapped. Matched only against the comment author identity, not the comment body, so a troll cannot bypass the graylist by quoting a trusted email. One entry per line.', 'troll-trap' )
+		);
+
+		printf(
+			'<textarea name="trolltrap_allowed" rows="6" cols="50" class="large-text code">%s</textarea>',
+			esc_textarea( get_option( 'trolltrap_allowed', '' ) )
 		);
 	}
 
@@ -517,8 +545,15 @@ class Mahangu_Troll_Trap_Settings {
 
 		$match_count      = (int) get_comment_meta( $comment_id, '_trolltrap_match_count', true );
 		$matched_keywords = get_comment_meta( $comment_id, '_trolltrap_matched_keywords', true );
+		$allowed_hits     = get_comment_meta( $comment_id, '_trolltrap_allowed', true );
 
-		if ( is_array( $matched_keywords ) && ! empty( $matched_keywords ) ) {
+		if ( is_array( $allowed_hits ) && ! empty( $allowed_hits ) ) {
+			printf(
+				'<p class="description" style="margin: 4px 0 0;">%1$s <code>%2$s</code></p>',
+				esc_html__( 'Allowlisted by:', 'troll-trap' ),
+				esc_html( implode( ', ', $allowed_hits ) )
+			);
+		} elseif ( is_array( $matched_keywords ) && ! empty( $matched_keywords ) ) {
 			printf(
 				'<p class="description" style="margin: 4px 0 0;">%1$s <code>%2$s</code></p>',
 				esc_html__( 'Matched graylist keywords:', 'troll-trap' ),
