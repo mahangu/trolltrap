@@ -89,7 +89,7 @@ class Mahangu_Troll_Trap_CLI {
 	}
 
 	/**
-	 * Re-evaluate a comment against the current Comment Graylist.
+	 * Re-evaluate one or every comment against the current Comment Graylist.
 	 *
 	 * Runs the same matcher that fires on new comments, so the resulting filter
 	 * reflects the current graylist, default filter, and graduated-severity
@@ -97,30 +97,90 @@ class Mahangu_Troll_Trap_CLI {
 	 *
 	 * ## OPTIONS
 	 *
-	 * <comment-id>
-	 * : The ID of the comment to re-evaluate.
+	 * [<comment-id>]
+	 * : The ID of the comment to re-evaluate. Required unless --all is set.
+	 *
+	 * [--all]
+	 * : Re-evaluate every comment on the site, in batches. Mutually exclusive
+	 * : with a positional ID.
+	 *
+	 * [--batch-size=<n>]
+	 * : With --all, the number of comments to fetch per batch (default 200).
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp trolltrap reevaluate 42
+	 *     wp trolltrap reevaluate --all
+	 *     wp trolltrap reevaluate --all --batch-size=500
 	 *
 	 * @param array $args       Positional arguments.
-	 * @param array $assoc_args Flag arguments (unused).
+	 * @param array $assoc_args Flag arguments.
 	 */
 	public function reevaluate( $args, $assoc_args ) {
 
-		unset( $assoc_args );
+		$all = ! empty( $assoc_args['all'] );
 
-		$comment_id = $this->require_comment( $args );
+		if ( $all && ! empty( $args ) ) {
+			WP_CLI::error( '--all cannot be combined with a positional comment ID.' );
+		}
 
-		delete_comment_meta( $comment_id, '_trolltrap_llm_text' );
+		if ( ! $all ) {
+			$comment_id = $this->require_comment( $args );
 
-		mahangu_troll_trap()->comments_tag( $comment_id );
+			delete_comment_meta( $comment_id, '_trolltrap_llm_text' );
 
-		$slug  = (string) get_comment_meta( $comment_id, '_trolltrap_filter', true );
-		$count = (int) get_comment_meta( $comment_id, '_trolltrap_match_count', true );
+			mahangu_troll_trap()->comments_tag( $comment_id );
 
-		WP_CLI::success( sprintf( 'Comment %d re-evaluated: filter=%s, matches=%d.', $comment_id, $slug, $count ) );
+			$slug  = (string) get_comment_meta( $comment_id, '_trolltrap_filter', true );
+			$count = (int) get_comment_meta( $comment_id, '_trolltrap_match_count', true );
+
+			WP_CLI::success( sprintf( 'Comment %d re-evaluated: filter=%s, matches=%d.', $comment_id, $slug, $count ) );
+			return;
+		}
+
+		$batch_size = isset( $assoc_args['batch-size'] ) ? max( 1, (int) $assoc_args['batch-size'] ) : 200;
+
+		$tt    = mahangu_troll_trap();
+		$total = (int) get_comments( array( 'count' => true ) );
+
+		if ( 0 === $total ) {
+			WP_CLI::success( 'No comments to re-evaluate.' );
+			return;
+		}
+
+		$progress = WP_CLI\Utils\make_progress_bar( sprintf( 'Re-evaluating %d comments', $total ), $total );
+
+		$offset    = 0;
+		$processed = 0;
+
+		while ( true ) {
+
+			$ids = get_comments(
+				array(
+					'fields' => 'ids',
+					'number' => $batch_size,
+					'offset' => $offset,
+					'order'  => 'ASC',
+				)
+			);
+
+			if ( empty( $ids ) ) {
+				break;
+			}
+
+			foreach ( $ids as $cid ) {
+				delete_comment_meta( $cid, '_trolltrap_llm_text' );
+				$tt->comments_tag( $cid );
+				$processed++;
+				$progress->tick();
+			}
+
+			$offset += $batch_size;
+		}
+
+		$progress->finish();
+
+		WP_CLI::success( sprintf( 'Re-evaluated %d comment(s) against the current graylist.', $processed ) );
 	}
 
 	/**
