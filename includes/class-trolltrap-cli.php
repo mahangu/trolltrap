@@ -657,7 +657,7 @@ class Mahangu_Troll_Trap_CLI {
 			WP_CLI::error( sprintf( 'Cannot read %s.', $path ) );
 		}
 
-		$raw = file_get_contents( $path ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_get_contents, WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- CLI tool reading a user-supplied path.
+		$raw = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- CLI tool reading a user-supplied path.
 
 		if ( false === $raw ) {
 			WP_CLI::error( sprintf( 'Failed to read %s.', $path ) );
@@ -669,19 +669,19 @@ class Mahangu_Troll_Trap_CLI {
 			WP_CLI::error( 'File is not a valid trolltrap settings export (missing options array).' );
 		}
 
-		$known     = array_flip( $this->exportable_options() );
-		$applied   = 0;
-		$skipped   = 0;
-		$unknown   = array();
+		$known   = array_flip( $this->exportable_options() );
+		$applied = 0;
+		$skipped = 0;
+		$unknown = array();
 
 		foreach ( $payload['options'] as $name => $value ) {
 			if ( ! isset( $known[ $name ] ) ) {
 				$unknown[] = (string) $name;
-				$skipped++;
+				++$skipped;
 				continue;
 			}
 			update_option( $name, $value );
-			$applied++;
+			++$applied;
 		}
 
 		WP_CLI::success( sprintf( 'Imported %d option(s); skipped %d unknown key(s).', $applied, $skipped ) );
