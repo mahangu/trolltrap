@@ -34,6 +34,9 @@ class Mahangu_Troll_Trap_Settings {
 
 		// POST endpoint for per-comment filter changes (replaces in-place GET handling).
 		add_action( 'admin_post_trolltrap_set_filter', array( $this, 'handle_set_filter' ) );
+
+		// POST endpoint for "Regenerate AI rewrite" per-comment button.
+		add_action( 'admin_post_trolltrap_regenerate_ai', array( $this, 'handle_regenerate_ai' ) );
 	}
 
 
@@ -539,9 +542,10 @@ class Mahangu_Troll_Trap_Settings {
 
 		if ( 'llm' === $comment_meta ) {
 
-			$tt = mahangu_troll_trap();
+			$tt        = mahangu_troll_trap();
+			$has_cache = ( $tt && $tt->ai && null !== $tt->ai->cached_text( $comment_id ) );
 
-			$status = ( $tt && $tt->ai && null !== $tt->ai->cached_text( $comment_id ) )
+			$status = $has_cache
 				? __( 'AI rewrite ready.', 'troll-trap' )
 				: __( 'AI rewrite pending; showing the fallback filter.', 'troll-trap' );
 
@@ -549,6 +553,23 @@ class Mahangu_Troll_Trap_Settings {
 				'<p class="description" style="margin: 4px 0 0;">%s</p>',
 				esc_html( $status )
 			);
+
+			if ( $has_cache ) {
+				printf(
+					'<form method="POST" action="%1$s" style="margin: 4px 0 0;">',
+					esc_url( admin_url( 'admin-post.php' ) )
+				);
+				print '<input type="hidden" name="action" value="trolltrap_regenerate_ai">';
+				wp_nonce_field( 'trolltrap_regenerate_ai_' . $comment_id );
+				printf( '<input type="hidden" name="comment_id" value="%d">', (int) $comment_id );
+				printf( '<input type="hidden" name="paged" value="%d">', (int) $paged );
+				printf( '<input type="hidden" name="p" value="%d">', (int) $p );
+				printf(
+					'<button type="submit" class="button-link">%s</button>',
+					esc_html__( 'Regenerate AI rewrite', 'troll-trap' )
+				);
+				print '</form>';
+			}
 		}
 	}
 
@@ -561,6 +582,10 @@ class Mahangu_Troll_Trap_Settings {
 	 * bound to a specific comment.
 	 */
 	public function handle_set_filter() {
+
+		if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
+			wp_die( esc_html__( 'POST is required.', 'troll-trap' ), 405 );
+		}
 
 		if ( ! current_user_can( 'moderate_comments' ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'troll-trap' ), 403 );
@@ -578,6 +603,53 @@ class Mahangu_Troll_Trap_Settings {
 		$filter  = in_array( $raw, $allowed, true ) ? $raw : 'none';
 
 		update_comment_meta( $comment_id, '_trolltrap_filter', $filter );
+
+		$redirect = admin_url( 'edit-comments.php' );
+		$paged    = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 0;
+		$p        = isset( $_POST['p'] ) ? absint( $_POST['p'] ) : 0;
+		if ( $paged ) {
+			$redirect = add_query_arg( 'paged', $paged, $redirect );
+		}
+		if ( $p ) {
+			$redirect = add_query_arg( 'p', $p, $redirect );
+		}
+
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
+
+	/**
+	 * Handler for the per-comment "Regenerate AI rewrite" button. Drops the
+	 * cached rewrite for one comment and re-queues the wp-cron job so a fresh
+	 * one is requested on the next cron tick.
+	 *
+	 * Useful when an admin gets a poor or off-style rewrite and wants another
+	 * shot without touching the comment or the AI settings.
+	 */
+	public function handle_regenerate_ai() {
+
+		if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
+			wp_die( esc_html__( 'POST is required.', 'troll-trap' ), 405 );
+		}
+
+		if ( ! current_user_can( 'moderate_comments' ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'troll-trap' ), 403 );
+		}
+
+		$comment_id = isset( $_POST['comment_id'] ) ? absint( $_POST['comment_id'] ) : 0;
+		if ( ! $comment_id || ! get_comment( $comment_id ) ) {
+			wp_die( esc_html__( 'Invalid comment.', 'troll-trap' ), 400 );
+		}
+
+		check_admin_referer( 'trolltrap_regenerate_ai_' . $comment_id );
+
+		$tt = mahangu_troll_trap();
+		if ( $tt && $tt->ai ) {
+			$tt->ai->regenerate( $comment_id );
+		} else {
+			delete_comment_meta( $comment_id, '_trolltrap_llm_text' );
+		}
 
 		$redirect = admin_url( 'edit-comments.php' );
 		$paged    = isset( $_POST['paged'] ) ? absint( $_POST['paged'] ) : 0;

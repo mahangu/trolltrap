@@ -72,6 +72,10 @@
     {
       "step": "runPHP",
       "code": "<?php require_once '/wordpress/wp-load.php'; require_once '/wordpress/wp-content/plugins/troll-trap/includes/class-trolltrap-cli.php'; if ( ! class_exists( 'Mahangu_Troll_Trap_CLI' ) ) { echo 'FAIL: CLI class not defined after require' . PHP_EOL; exit( 1 ); } $ref = new ReflectionClass( 'Mahangu_Troll_Trap_CLI' ); foreach ( array( 'mark', 'untrap', 'reevaluate', 'status', 'filters' ) as $method ) { if ( ! $ref->hasMethod( $method ) ) { echo 'FAIL: CLI missing expected command method: ' . $method . PHP_EOL; exit( 1 ); } $m = $ref->getMethod( $method ); if ( ! $m->isPublic() ) { echo 'FAIL: CLI method should be public: ' . $method . PHP_EOL; exit( 1 ); } } echo 'OK: CLI class loads with mark, untrap, reevaluate, status, filters commands' . PHP_EOL;"
+    },
+    {
+      "step": "runPHP",
+      "code": "<?php require_once '/wordpress/wp-load.php'; $tt = mahangu_troll_trap(); $cid = wp_insert_comment( array( 'comment_post_ID' => 1, 'comment_content' => 'ai regen target', 'comment_author' => 'regen', 'comment_author_email' => 'regen@example.com' ) ); update_comment_meta( $cid, '_trolltrap_filter', 'llm' ); update_comment_meta( $cid, '_trolltrap_llm_text', 'a stale rewrite from a prior run' ); if ( null === $tt->ai->cached_text( $cid ) ) { echo 'FAIL: precondition failed, cached_text returned null before regenerate' . PHP_EOL; exit( 1 ); } $tt->ai->regenerate( $cid ); $remaining = get_comment_meta( $cid, '_trolltrap_llm_text', true ); if ( '' !== $remaining ) { echo 'FAIL: regenerate did not clear the cached rewrite, got: ' . var_export( $remaining, true ) . PHP_EOL; exit( 1 ); } if ( null !== $tt->ai->cached_text( $cid ) ) { echo 'FAIL: cached_text still returns a value after regenerate' . PHP_EOL; exit( 1 ); } if ( false === $tt->ai->regenerate( 0 ) ) { echo 'OK: regenerate clears the cached rewrite and rejects bogus IDs' . PHP_EOL; } else { echo 'FAIL: regenerate should return false for invalid comment ID' . PHP_EOL; exit( 1 ); }"
     }
   ]
 }
