@@ -3,6 +3,7 @@
 .github
 .gitignore
 .distignore
+.wordpress-org
 phpcs.xml.dist
 README.md
 build
