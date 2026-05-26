@@ -203,6 +203,55 @@ class Mahangu_Troll_Trap_Settings {
 		}
 
 		print '</select>';
+
+		$this->render_filter_preview_table();
+	}
+
+
+	/**
+	 * Render a preview table showing each transforming filter applied to a
+	 * sample sentence. Helps administrators pick a default filter without
+	 * having to trap a comment to see what each one does.
+	 *
+	 * The 'llm' filter is skipped because it has no inline callback; its
+	 * output is generated per comment by the Anthropic API and cannot be
+	 * previewed statically.
+	 */
+	private function render_filter_preview_table() {
+
+		$sample = __( 'Your comment is rude and unwelcome here.', 'troll-trap' );
+
+		printf(
+			'<p class="description" style="margin-top: 1em;">%s</p>',
+			sprintf(
+				/* translators: %s: the sample sentence used in the filter previews, wrapped in <em>. */
+				esc_html__( 'Preview of each filter, applied to: %s', 'troll-trap' ),
+				'<em>' . esc_html( $sample ) . '</em>'
+			)
+		);
+
+		print '<table class="widefat striped" style="max-width: 720px; margin-top: 0.5em;">';
+		printf(
+			'<thead><tr><th>%1$s</th><th>%2$s</th></tr></thead><tbody>',
+			esc_html__( 'Filter', 'troll-trap' ),
+			esc_html__( 'Preview', 'troll-trap' )
+		);
+
+		foreach ( $this->filters->transforming() as $filter ) {
+
+			$registered = $this->filters->get( $filter['slug'] );
+			if ( null === $registered || null === $registered['callback'] ) {
+				continue;
+			}
+
+			printf(
+				'<tr><td><strong>%1$s</strong></td><td><code style="word-break: break-word;">%2$s</code></td></tr>',
+				esc_html( $filter['name'] ),
+				esc_html( $this->filters->apply( $filter['slug'], $sample ) )
+			);
+		}
+
+		print '</tbody></table>';
 	}
 
 
