@@ -351,6 +351,10 @@ class Mahangu_Troll_Trap_Settings {
 			foreach ( $comment_ids as $comment_id ) {
 				$cid = absint( $comment_id );
 				if ( $cid && get_comment( $cid ) ) {
+					// Drop any cached AI rewrite so it gets regenerated for
+					// the current content if the comment is re-tagged 'llm',
+					// and so a stale rewrite cannot survive a move off 'llm'.
+					delete_comment_meta( $cid, '_trolltrap_llm_text' );
 					$tt->comments_tag( $cid );
 				}
 			}
