@@ -4,7 +4,7 @@ Tags: comments, comment-moderation, moderation, anti-spam, troll
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0-alpha.4
+Stable tag: 1.0.0-alpha.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,11 @@ Only users who can moderate comments (Editors and Administrators by default).
 3. Trapped comments as they appear to site visitors, beside untouched ones.
 
 == Changelog ==
+
+= 1.0.0-alpha.5 =
+* Add a Comment Allowlist that lets trusted authors, emails, URLs, IPs, or user-agent fragments bypass the graylist entirely. Matched only against author identity, never the comment body, so it cannot be bypassed by quoting a trusted identifier in a comment.
+* Add a Disabled Filters section so admins can hide individual transforms (zalgo, uwu, etc.) from the Default Filter, Severity Ladder, AI Fallback, and Mark-as-Troll choices. Already-tagged comments keep rendering.
+* Invalidate the cached AI rewrite automatically when an administrator edits a comment that is on the AI filter, so the rendered text catches up with the edit.
 
 = 1.0.0-alpha.4 =
 * Honor the Anthropic Retry-After header on AI rewrite retries so the backoff respects what the API asks for.
