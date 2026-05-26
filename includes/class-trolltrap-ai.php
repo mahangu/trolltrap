@@ -282,6 +282,13 @@ class Mahangu_Troll_Trap_AI {
 				update_comment_meta( $comment_id, '_trolltrap_llm_attempts', $attempts );
 				$delay = isset( self::$backoff_seconds[ $attempts ] ) ? self::$backoff_seconds[ $attempts ] : end( self::$backoff_seconds );
 
+				// If the API sent a Retry-After hint, prefer the larger of the
+				// two delays so we never poll back sooner than the server
+				// asked us to.
+				if ( isset( $result['retry_after'] ) && $result['retry_after'] > $delay ) {
+					$delay = (int) $result['retry_after'];
+				}
+
 				// WordPress' wp_schedule_single_event dedupes events with the
 				// same hook+args within a 10-minute window. Clear any older
 				// queued event for this comment first so the backoff timestamp
@@ -373,10 +380,24 @@ class Mahangu_Troll_Trap_AI {
 			// retryable, as is any 5xx. Other 4xx (401 bad key, 400 malformed,
 			// 403 forbidden, ...) won't fix themselves by retrying.
 			$transient = ( 408 === $code || 429 === $code || ( $code >= 500 && $code <= 599 ) );
-			return array(
+
+			$out = array(
 				'status' => $transient ? 'transient' : 'permanent',
 				'text'   => null,
 			);
+
+			if ( $transient ) {
+				// Honor the Retry-After header when Anthropic provides one.
+				// The header can be either an integer (seconds) or an HTTP
+				// date; we only handle the integer form, which is what the
+				// Messages API returns in practice.
+				$retry_after = (int) wp_remote_retrieve_header( $response, 'retry-after' );
+				if ( $retry_after > 0 ) {
+					$out['retry_after'] = $retry_after;
+				}
+			}
+
+			return $out;
 		}
 
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
