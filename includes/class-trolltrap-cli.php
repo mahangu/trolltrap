@@ -19,6 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *     wp trolltrap regenerate-ai 42
  *     wp trolltrap status 42
  *     wp trolltrap filters
+ *     wp trolltrap dry-run-graylist --keywords="badger,mushroom"
  */
 class Mahangu_Troll_Trap_CLI {
 
@@ -266,6 +267,122 @@ class Mahangu_Troll_Trap_CLI {
 		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
 
 		WP_CLI\Utils\format_items( $format, array( $row ), array_keys( $row ) );
+	}
+
+	/**
+	 * Dry-run a candidate Comment Graylist against existing comments, without
+	 * writing anything. Useful for sanity-checking a new keyword list before
+	 * pasting it into the live Settings > Discussion > Comment Graylist box.
+	 *
+	 * Prints a table of matched comments with their ID, author, an excerpt of
+	 * the content, and the keywords each one hit.
+	 *
+	 * ## OPTIONS
+	 *
+	 * --keywords=<list>
+	 * : Comma-separated keyword list to test. Required.
+	 *
+	 * [--limit=<n>]
+	 * : Maximum number of matching comments to show (default 20). Pass 0 for
+	 *   no limit.
+	 *
+	 * [--format=<format>]
+	 * : Render format: table, csv, json, yaml. Default: table.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp trolltrap dry-run-graylist --keywords="badger,mushroom"
+	 *     wp trolltrap dry-run-graylist --keywords="badger" --limit=0 --format=json
+	 *
+	 * @param array $args       Positional arguments (unused).
+	 * @param array $assoc_args Flag arguments.
+	 */
+	public function dry_run_graylist( $args, $assoc_args ) {
+
+		unset( $args );
+
+		if ( empty( $assoc_args['keywords'] ) ) {
+			WP_CLI::error( 'Missing required --keywords=<comma-separated list>.' );
+		}
+
+		$words = array_values(
+			array_filter(
+				array_map( 'trim', explode( ',', (string) $assoc_args['keywords'] ) )
+			)
+		);
+
+		if ( empty( $words ) ) {
+			WP_CLI::error( '--keywords resolved to an empty list after trimming.' );
+		}
+
+		$limit  = isset( $assoc_args['limit'] ) ? max( 0, (int) $assoc_args['limit'] ) : 20;
+		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
+
+		// Stream comments newest-first so the table favors recent activity.
+		global $wpdb;
+
+		$rows           = array();
+		$matched_count  = 0;
+		$last_id        = PHP_INT_MAX;
+		$batch_size     = 200;
+
+		while ( true ) {
+
+			$ids = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT comment_ID FROM {$wpdb->comments} WHERE comment_ID < %d ORDER BY comment_ID DESC LIMIT %d",
+					$last_id,
+					$batch_size
+				)
+			);
+
+			if ( empty( $ids ) ) {
+				break;
+			}
+
+			foreach ( $ids as $cid ) {
+
+				$cid     = (int) $cid;
+				$last_id = $cid;
+				$comment = get_comment( $cid );
+
+				if ( ! $comment ) {
+					continue;
+				}
+
+				$hit = Mahangu_Troll_Trap::match_keywords( $comment, $words );
+
+				if ( empty( $hit ) ) {
+					continue;
+				}
+
+				++$matched_count;
+
+				$rows[] = array(
+					'comment_id'       => $cid,
+					'author'           => $comment->comment_author,
+					'content_excerpt'  => wp_html_excerpt( (string) $comment->comment_content, 60, '...' ),
+					'matched_keywords' => implode( ', ', $hit ),
+				);
+
+				if ( $limit > 0 && count( $rows ) >= $limit ) {
+					break 2;
+				}
+			}
+		}
+
+		if ( empty( $rows ) ) {
+			WP_CLI::success( 'No existing comments match the supplied keywords.' );
+			return;
+		}
+
+		WP_CLI\Utils\format_items( $format, $rows, array( 'comment_id', 'author', 'content_excerpt', 'matched_keywords' ) );
+
+		WP_CLI::log(
+			$limit > 0 && $matched_count >= $limit
+				? sprintf( 'Showing first %d match(es). Run with --limit=0 for the full list.', $limit )
+				: sprintf( '%d comment(s) would match this graylist.', $matched_count )
+		);
 	}
 
 	/**

@@ -123,18 +123,41 @@ class Mahangu_Troll_Trap {
 	 */
 	public function comments_tag( $comment_id ) {
 
-		$comment  = get_comment( $comment_id );
-		$mod_keys = trim( get_option( 'trolltrap_words', '' ) );
-		$words    = explode( "\n", $mod_keys );
+		$comment = get_comment( $comment_id );
 
-		// Collect which distinct graylist keywords the comment matches.
-		// Keyword matching mirrors WordPress' own wp_check_comment_disallowed_list().
+		if ( ! $comment ) {
+			return;
+		}
+
+		$matched     = self::match_keywords( $comment, self::words_from_option() );
+		$match_count = count( $matched );
+
+		update_comment_meta( $comment_id, '_trolltrap_filter', $this->resolve_filter( $match_count ) );
+		update_comment_meta( $comment_id, '_trolltrap_match_count', $match_count );
+		update_comment_meta( $comment_id, '_trolltrap_matched_keywords', $matched );
+	}
+
+
+	/**
+	 * Pure matcher: return the keywords from $words that the given comment
+	 * matches, in the order they were supplied. No writes, no side effects.
+	 * Mirrors WordPress' own wp_check_comment_disallowed_list() shape.
+	 *
+	 * Centralised so the production comments_tag path and the read-only CLI
+	 * dry-run share one source of truth.
+	 *
+	 * @since 1.0.0
+	 * @param WP_Comment $comment Comment to test.
+	 * @param string[]   $words   Candidate keywords (already trimmed of empty entries).
+	 * @return string[] The subset of $words that matched the comment.
+	 */
+	public static function match_keywords( $comment, $words ) {
+
 		$matched = array();
 
 		foreach ( (array) $words as $word ) {
-			$word = trim( $word );
+			$word = trim( (string) $word );
 
-			// Skip empty lines.
 			if ( '' === $word ) {
 				continue;
 			}
@@ -154,11 +177,28 @@ class Mahangu_Troll_Trap {
 			}
 		}
 
-		$match_count = count( $matched );
+		return $matched;
+	}
 
-		update_comment_meta( $comment_id, '_trolltrap_filter', $this->resolve_filter( $match_count ) );
-		update_comment_meta( $comment_id, '_trolltrap_match_count', $match_count );
-		update_comment_meta( $comment_id, '_trolltrap_matched_keywords', $matched );
+
+	/**
+	 * Parse the stored graylist option into a clean array of keywords, dropping
+	 * empty lines and surrounding whitespace.
+	 *
+	 * @return string[]
+	 */
+	public static function words_from_option() {
+
+		$raw = (string) get_option( 'trolltrap_words', '' );
+
+		return array_values(
+			array_filter(
+				array_map( 'trim', preg_split( '/\r\n|\r|\n/', $raw ) ),
+				static function ( $w ) {
+					return '' !== $w;
+				}
+			)
+		);
 	}
 
 
