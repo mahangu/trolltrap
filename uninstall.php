@@ -29,6 +29,7 @@ function trolltrap_uninstall_site() {
 	// Remove the plugin's comment meta from every comment ($delete_all = true).
 	delete_metadata( 'comment', 0, '_trolltrap_filter', '', true );
 	delete_metadata( 'comment', 0, '_trolltrap_match_count', '', true );
+	delete_metadata( 'comment', 0, '_trolltrap_matched_keywords', '', true );
 	delete_metadata( 'comment', 0, '_trolltrap_llm_text', '', true );
 
 	// Drop any queued AI rewrite jobs.
