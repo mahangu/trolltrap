@@ -9,6 +9,11 @@ require 'class-trolltrap-convert.php';
 require 'class-trolltrap-ai.php';
 require 'class-trolltrap-settings.php';
 
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require 'class-trolltrap-cli.php';
+	WP_CLI::add_command( 'trolltrap', 'Mahangu_Troll_Trap_CLI' );
+}
+
 
 class Mahangu_Troll_Trap {
 
