@@ -58,11 +58,15 @@ class Mahangu_Troll_Trap_AI {
 		add_action( self::CRON_HOOK, array( $this, 'run_transform' ) );
 
 		// Observe the filter meta: whenever a comment is assigned the 'llm'
-		// filter — by the graylist, a bulk action, or the per-comment
-		// dropdown — schedule the rewrite. This keeps the AI feature
+		// filter (by the graylist, a bulk action, or the per-comment
+		// dropdown), schedule the rewrite. This keeps the AI feature
 		// self-contained, with no wiring in the assigning code paths.
 		add_action( 'added_comment_meta', array( $this, 'maybe_schedule' ), 10, 4 );
 		add_action( 'updated_comment_meta', array( $this, 'maybe_schedule' ), 10, 4 );
+
+		// "Send a test rewrite" panel and handler on Settings > Discussion.
+		add_action( 'admin_footer-options-discussion.php', array( $this, 'render_test_rewrite_panel' ) );
+		add_action( 'admin_post_trolltrap_ai_test_rewrite', array( $this, 'handle_test_rewrite' ) );
 	}
 
 	/**
@@ -585,5 +589,135 @@ class Mahangu_Troll_Trap_AI {
 		}
 
 		return $value;
+	}
+
+	/**
+	 * The fixed sample sentence used by the Test Rewrite panel. Short, opaque,
+	 * and unambiguous in any style so the user can judge whether the rewrite
+	 * looks right.
+	 *
+	 * @return string
+	 */
+	public function test_sample() {
+		return __( 'Your comment is rude and unwelcome here.', 'troll-trap' );
+	}
+
+	/**
+	 * Send the test sample through the configured Anthropic API key, model,
+	 * and style. Exposed as a testable seam so the admin-post handler stays
+	 * thin (it just adapts this to nonce + transient + redirect).
+	 *
+	 * @return array{status:string,text:?string} Same shape as request(), plus
+	 *                                          'unavailable' when AI is off.
+	 */
+	public function test_rewrite() {
+
+		if ( ! $this->is_available() ) {
+			return array(
+				'status' => 'unavailable',
+				'text'   => null,
+			);
+		}
+
+		return $this->request( $this->test_sample() );
+	}
+
+	/**
+	 * Handle the "Send a test rewrite" POST. Runs one request through the
+	 * saved settings and stashes the result in a per-user transient that the
+	 * footer panel reads back on the redirect.
+	 */
+	public function handle_test_rewrite() {
+
+		if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
+			wp_die( esc_html__( 'POST is required.', 'troll-trap' ), 405 );
+		}
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'troll-trap' ), 403 );
+		}
+
+		check_admin_referer( 'trolltrap_ai_test_rewrite' );
+
+		$result = $this->test_rewrite();
+
+		set_transient( 'trolltrap_ai_test_result_' . get_current_user_id(), $result, 60 );
+
+		wp_safe_redirect( admin_url( 'options-discussion.php#trolltrap_ai' ) );
+		exit;
+	}
+
+	/**
+	 * Render the Test Rewrite panel in the admin footer of options-discussion.
+	 * Sits outside the Settings API form so it can be its own <form> without
+	 * nesting. Only renders when the AI feature is enabled and has a key.
+	 */
+	public function render_test_rewrite_panel() {
+
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		if ( ! $this->is_available() ) {
+			return;
+		}
+
+		$key = 'trolltrap_ai_test_result_' . get_current_user_id();
+
+		print '<div class="trolltrap-ai-test-panel" style="margin: 1em 0; padding: 12px 14px; background: #fff; border-left: 4px solid #2271b1; max-width: 720px;">';
+		printf( '<h2 style="margin-top: 0;">%s</h2>', esc_html__( 'Troll Trap AI: Send a test rewrite', 'troll-trap' ) );
+		printf(
+			'<p>%s</p>',
+			esc_html(
+				sprintf(
+					/* translators: %s: sample sentence. */
+					__( 'Sends "%s" to the Anthropic API using your saved key, model, and style. Save changes first if you have just edited any AI settings.', 'troll-trap' ),
+					$this->test_sample()
+				)
+			)
+		);
+
+		$result = get_transient( $key );
+
+		if ( is_array( $result ) ) {
+
+			delete_transient( $key );
+
+			if ( 'ok' === $result['status'] && ! empty( $result['text'] ) ) {
+				printf(
+					'<p style="margin: 0 0 8px;"><strong>%1$s</strong><br><code style="display: block; padding: 8px; background: #f6f7f7; word-break: break-word;">%2$s</code></p>',
+					esc_html__( 'Rewritten sample:', 'troll-trap' ),
+					esc_html( $result['text'] )
+				);
+			} elseif ( 'transient' === $result['status'] ) {
+				printf(
+					'<div class="notice notice-warning inline" style="margin: 0 0 8px;"><p>%s</p></div>',
+					esc_html__( 'The Anthropic API returned a transient error (rate limit, timeout, or overload). Try again in a moment.', 'troll-trap' )
+				);
+			} elseif ( 'unavailable' === $result['status'] ) {
+				printf(
+					'<div class="notice notice-error inline" style="margin: 0 0 8px;"><p>%s</p></div>',
+					esc_html__( 'AI rewriting is not enabled or no API key is configured.', 'troll-trap' )
+				);
+			} else {
+				printf(
+					'<div class="notice notice-error inline" style="margin: 0 0 8px;"><p>%s</p></div>',
+					esc_html__( 'The Anthropic API rejected the request. Check the API key, model name, and style, then save and try again.', 'troll-trap' )
+				);
+			}
+		}
+
+		printf(
+			'<form method="POST" action="%s">',
+			esc_url( admin_url( 'admin-post.php' ) )
+		);
+		print '<input type="hidden" name="action" value="trolltrap_ai_test_rewrite">';
+		wp_nonce_field( 'trolltrap_ai_test_rewrite' );
+		printf(
+			'<button type="submit" class="button button-secondary">%s</button>',
+			esc_html__( 'Send a test rewrite', 'troll-trap' )
+		);
+		print '</form>';
+		print '</div>';
 	}
 }

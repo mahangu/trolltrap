@@ -222,7 +222,9 @@ class Mahangu_Troll_Trap_Settings {
 	 */
 	private function render_filter_preview_table() {
 
-		$sample = __( 'Your comment is rude and unwelcome here.', 'troll-trap' );
+		// Reuse the AI feature's test sample as the single source so the
+		// filter previews and the AI test rewrite never drift apart.
+		$sample = mahangu_troll_trap()->ai->test_sample();
 
 		printf(
 			'<p class="description" style="margin-top: 1em;">%1$s <em>%2$s</em></p>',
