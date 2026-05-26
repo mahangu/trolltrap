@@ -4,7 +4,7 @@ Tags: comments, comment-moderation, moderation, anti-spam, troll
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0-alpha.1
+Stable tag: 1.0.0-alpha.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,16 @@ Only users who can moderate comments (Editors and Administrators by default).
 3. Trapped comments as they appear to site visitors, beside untouched ones.
 
 == Changelog ==
+
+= 1.0.0-alpha.2 =
+* Preview every registered filter, applied to a sample sentence, beneath the Default Filter selector on Settings &gt; Discussion.
+* Surface the matched graylist keywords (not just the count) for each trapped comment on the Comments admin screen.
+* Show whether an AI rewrite is ready or pending under the filter dropdown for comments assigned the AI filter.
+* Add a "Re-evaluate against graylist" bulk action on the Comments screen, so updated graylist rules can be applied retroactively. Drops any cached AI rewrite for the re-evaluated comments.
+* Add a "Settings" shortcut on the Plugins screen that jumps to the Troll Trap section under Settings &gt; Discussion.
+* Add WP-CLI commands: wp trolltrap mark, untrap, reevaluate, status, filters.
+* Fix the author name spelling in the plugin header.
+* Expand CI coverage with end-to-end tests for the comment_text rendering pipeline, the admin column HTML, the plugin action link, the re-evaluate bulk action, and the WP-CLI class.
 
 = 1.0.0-alpha.1 =
 * First public alpha.
