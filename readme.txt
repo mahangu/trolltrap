@@ -4,7 +4,7 @@ Tags: comments, comment-moderation, moderation, anti-spam, troll
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0-alpha.6
+Stable tag: 1.0.0-alpha.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,10 @@ Only users who can moderate comments (Editors and Administrators by default).
 3. Trapped comments as they appear to site visitors, beside untouched ones.
 
 == Changelog ==
+
+= 1.0.0-alpha.7 =
+* Add wp trolltrap export-settings and import-settings (with --dry-run) so the plugin's configuration can be round-tripped between sites or saved as a backup. The Anthropic API key is deliberately excluded from exports.
+* README.md and a new CONTRIBUTING.md cover the current feature set, dev workflow, and release process.
 
 = 1.0.0-alpha.6 =
 * Add a Troll Trap widget on the admin Dashboard showing how many comments are currently trapped, broken down by filter, plus an allowlisted count.
