@@ -22,6 +22,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *     wp trolltrap dry-run-graylist --keywords="badger,mushroom"
  *     wp trolltrap dry-run-allowlist --keywords="trusted@example.com"
  *     wp trolltrap stats
+ *     wp trolltrap export-settings
+ *     wp trolltrap import-settings --file=trolltrap.json
  */
 class Mahangu_Troll_Trap_CLI {
 
@@ -545,6 +547,148 @@ class Mahangu_Troll_Trap_CLI {
 		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
 
 		WP_CLI\Utils\format_items( $format, $out, array( 'filter', 'count' ) );
+	}
+
+	/**
+	 * The Troll Trap options that are safe to export and import. Deliberately
+	 * excludes 'trolltrap_ai_key' so a secret never leaves the source site
+	 * through this command.
+	 *
+	 * @return string[]
+	 */
+	private function exportable_options() {
+
+		return array(
+			'trolltrap_words',
+			'trolltrap_allowed',
+			'trolltrap_default_filter',
+			'trolltrap_disabled_filters',
+			'trolltrap_graduated_enabled',
+			'trolltrap_severity_ladder',
+			'trolltrap_ai_enabled',
+			'trolltrap_ai_model',
+			'trolltrap_ai_style',
+			'trolltrap_ai_fallback',
+		);
+	}
+
+	/**
+	 * Dump every Troll Trap option (except the API key) to JSON on stdout
+	 * or a file. Pairs with import-settings for moving config between sites.
+	 *
+	 * The Anthropic API key is deliberately excluded: secrets shouldn't be
+	 * round-tripped through file artifacts. Set the key on the target site
+	 * via wp-config.php (TROLLTRAP_ANTHROPIC_KEY) or the settings screen.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--file=<path>]
+	 * : Write the JSON dump to this path. Default: stdout.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp trolltrap export-settings > trolltrap.json
+	 *     wp trolltrap export-settings --file=trolltrap.json
+	 *
+	 * @param array $args       Positional arguments (unused).
+	 * @param array $assoc_args Flag arguments.
+	 */
+	public function export_settings( $args, $assoc_args ) {
+
+		unset( $args );
+
+		$payload = array(
+			'version' => defined( 'TROLLTRAP_VERSION' ) ? (string) TROLLTRAP_VERSION : '',
+			'options' => array(),
+		);
+
+		foreach ( $this->exportable_options() as $name ) {
+			$payload['options'][ $name ] = get_option( $name );
+		}
+
+		$json = wp_json_encode( $payload, JSON_PRETTY_PRINT );
+
+		if ( false === $json ) {
+			WP_CLI::error( 'Failed to JSON-encode the settings payload.' );
+		}
+
+		if ( ! empty( $assoc_args['file'] ) ) {
+			$path = (string) $assoc_args['file'];
+			if ( false === file_put_contents( $path, $json ) ) { // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- CLI tool writing to a user-supplied path.
+				WP_CLI::error( sprintf( 'Could not write to %s.', $path ) );
+			}
+			WP_CLI::success( sprintf( 'Wrote %d option(s) to %s.', count( $payload['options'] ), $path ) );
+			return;
+		}
+
+		WP_CLI::line( $json );
+	}
+
+	/**
+	 * Restore Troll Trap settings from a JSON file produced by export-settings.
+	 *
+	 * Existing options are overwritten with the values from the file; options
+	 * not present in the file are left untouched. Unknown option names in the
+	 * file are silently skipped.
+	 *
+	 * ## OPTIONS
+	 *
+	 * --file=<path>
+	 * : Path to a JSON file produced by export-settings. Required.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp trolltrap import-settings --file=trolltrap.json
+	 *
+	 * @param array $args       Positional arguments (unused).
+	 * @param array $assoc_args Flag arguments.
+	 */
+	public function import_settings( $args, $assoc_args ) {
+
+		unset( $args );
+
+		if ( empty( $assoc_args['file'] ) ) {
+			WP_CLI::error( 'Missing required --file=<path>.' );
+		}
+
+		$path = (string) $assoc_args['file'];
+
+		if ( ! is_readable( $path ) ) {
+			WP_CLI::error( sprintf( 'Cannot read %s.', $path ) );
+		}
+
+		$raw = file_get_contents( $path ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_get_contents, WordPress.WP.AlternativeFunctions.file_system_operations_file_get_contents -- CLI tool reading a user-supplied path.
+
+		if ( false === $raw ) {
+			WP_CLI::error( sprintf( 'Failed to read %s.', $path ) );
+		}
+
+		$payload = json_decode( $raw, true );
+
+		if ( ! is_array( $payload ) || ! isset( $payload['options'] ) || ! is_array( $payload['options'] ) ) {
+			WP_CLI::error( 'File is not a valid trolltrap settings export (missing options array).' );
+		}
+
+		$known     = array_flip( $this->exportable_options() );
+		$applied   = 0;
+		$skipped   = 0;
+		$unknown   = array();
+
+		foreach ( $payload['options'] as $name => $value ) {
+			if ( ! isset( $known[ $name ] ) ) {
+				$unknown[] = (string) $name;
+				$skipped++;
+				continue;
+			}
+			update_option( $name, $value );
+			$applied++;
+		}
+
+		WP_CLI::success( sprintf( 'Imported %d option(s); skipped %d unknown key(s).', $applied, $skipped ) );
+
+		if ( ! empty( $unknown ) ) {
+			WP_CLI::log( 'Skipped: ' . implode( ', ', $unknown ) );
+		}
 	}
 
 	/**
