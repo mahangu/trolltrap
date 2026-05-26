@@ -149,6 +149,29 @@ class Mahangu_Troll_Trap_AI {
 	}
 
 	/**
+	 * Drop the cached rewrite for a comment and re-queue the cron job. Used
+	 * by the per-comment "Regenerate AI rewrite" button and any other path
+	 * that wants a fresh rewrite without changing the assigned filter.
+	 *
+	 * @param int $comment_id Comment ID.
+	 * @return bool True if the request was queued; false on a bogus ID.
+	 */
+	public function regenerate( $comment_id ) {
+
+		$comment_id = absint( $comment_id );
+
+		if ( ! $comment_id ) {
+			return false;
+		}
+
+		delete_comment_meta( $comment_id, '_trolltrap_llm_text' );
+
+		$this->schedule( $comment_id );
+
+		return true;
+	}
+
+	/**
 	 * Queue a one-off wp-cron event to rewrite a comment.
 	 *
 	 * @param int $comment_id Comment ID.
