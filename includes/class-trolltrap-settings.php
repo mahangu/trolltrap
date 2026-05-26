@@ -191,7 +191,7 @@ class Mahangu_Troll_Trap_Settings {
 
 		printf(
 			'<p><label for="trolltrap_allowed">%s</label></p>',
-			esc_html__( 'Trusted authors, emails, IP addresses, or user-agent fragments that should never be trapped. When a new comment matches anything on this list, the graylist is skipped entirely and the comment is left untouched. One entry per line.', 'troll-trap' )
+			esc_html__( 'Trusted authors, emails, URLs, IP addresses, or user-agent fragments that should never be trapped. Matched only against the comment author identity, not the comment body, so a troll cannot bypass the graylist by quoting a trusted email. One entry per line.', 'troll-trap' )
 		);
 
 		printf(
