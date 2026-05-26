@@ -44,6 +44,10 @@ class Mahangu_Troll_Trap {
 		add_action( 'comment_post', array( $this, 'comments_tag' ), 10, 1 );
 
 		add_filter( 'comment_text', array( $this, 'comments_render' ), 10, 2 );
+
+		// Surface the trapped state in the comment's CSS class list so themes
+		// can style trapped comments distinctly (greyed out, italic, etc.).
+		add_filter( 'comment_class', array( $this, 'comment_css_classes' ), 10, 3 );
 	}
 
 
@@ -324,6 +328,41 @@ class Mahangu_Troll_Trap {
 	 * @param WP_Comment|null $comment The comment object, when supplied by the caller.
 	 * @return string
 	 */
+	/**
+	 * Append trolltrap-* CSS classes to a comment's wrapper when it has a
+	 * non-trivial Troll Trap filter. Lets theme authors target trapped
+	 * comments without re-implementing the meta read.
+	 *
+	 * Class shape:
+	 *   - trolltrap-trapped               (always, when filter is not 'none')
+	 *   - trolltrap-filter-<slug>         (the assigned filter slug, sanitized)
+	 *   - trolltrap-ai-failed             (when filter is 'llm' and retries are exhausted)
+	 *
+	 * @param string[] $classes     The comment's classes.
+	 * @param string[] $css_classes Additional classes passed to comment_class (unused).
+	 * @param int      $comment_id  Comment ID.
+	 * @return string[]
+	 */
+	public function comment_css_classes( $classes, $css_classes, $comment_id ) {
+
+		unset( $css_classes );
+
+		$slug = (string) get_comment_meta( $comment_id, '_trolltrap_filter', true );
+
+		if ( '' === $slug || 'none' === $slug ) {
+			return $classes;
+		}
+
+		$classes[] = 'trolltrap-trapped';
+		$classes[] = 'trolltrap-filter-' . sanitize_html_class( $slug );
+
+		if ( 'llm' === $slug && $this->ai && $this->ai->has_failed( $comment_id ) ) {
+			$classes[] = 'trolltrap-ai-failed';
+		}
+
+		return $classes;
+	}
+
 	public function comments_render( $content, $comment = null ) {
 
 		// Leave the comment untouched in the admin (e.g. edit-comments.php).
