@@ -122,9 +122,9 @@ class Mahangu_Troll_Trap {
 		$mod_keys = trim( get_option( 'trolltrap_words', '' ) );
 		$words    = explode( "\n", $mod_keys );
 
-		// Count how many distinct graylist keywords the comment matches.
+		// Collect which distinct graylist keywords the comment matches.
 		// Keyword matching mirrors WordPress' own wp_check_comment_disallowed_list().
-		$match_count = 0;
+		$matched = array();
 
 		foreach ( (array) $words as $word ) {
 			$word = trim( $word );
@@ -145,12 +145,15 @@ class Mahangu_Troll_Trap {
 				|| preg_match( $pattern, $comment->comment_author_IP )
 				|| preg_match( $pattern, $comment->comment_agent )
 			) {
-				++$match_count;
+				$matched[] = $word;
 			}
 		}
 
+		$match_count = count( $matched );
+
 		update_comment_meta( $comment_id, '_trolltrap_filter', $this->resolve_filter( $match_count ) );
 		update_comment_meta( $comment_id, '_trolltrap_match_count', $match_count );
+		update_comment_meta( $comment_id, '_trolltrap_matched_keywords', $matched );
 	}
 
 
