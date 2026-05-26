@@ -21,6 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *     wp trolltrap filters
  *     wp trolltrap dry-run-graylist --keywords="badger,mushroom"
  *     wp trolltrap dry-run-allowlist --keywords="trusted@example.com"
+ *     wp trolltrap stats
  */
 class Mahangu_Troll_Trap_CLI {
 
@@ -471,6 +472,79 @@ class Mahangu_Troll_Trap_CLI {
 		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
 
 		WP_CLI\Utils\format_items( $format, $rows, array( 'slug', 'name', 'severity', 'transforms' ) );
+	}
+
+	/**
+	 * Show how many comments are currently on each Troll Trap filter, plus
+	 * the count of allowlisted comments. Quick operational snapshot.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--format=<format>]
+	 * : Render format: table, csv, json, yaml. Default: table.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp trolltrap stats
+	 *     wp trolltrap stats --format=json
+	 *
+	 * @param array $args       Positional arguments (unused).
+	 * @param array $assoc_args Flag arguments.
+	 */
+	public function stats( $args, $assoc_args ) {
+
+		unset( $args );
+
+		global $wpdb;
+
+		// One COUNT per filter slug currently in commentmeta.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT meta_value AS filter_slug, COUNT(*) AS comment_count FROM {$wpdb->commentmeta} WHERE meta_key = %s GROUP BY meta_value ORDER BY comment_count DESC",
+				'_trolltrap_filter'
+			),
+			ARRAY_A
+		);
+
+		$untagged = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->comments} c WHERE NOT EXISTS ( SELECT 1 FROM {$wpdb->commentmeta} m WHERE m.comment_id = c.comment_ID AND m.meta_key = %s )",
+				'_trolltrap_filter'
+			)
+		);
+
+		$allowlisted = (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$wpdb->commentmeta} WHERE meta_key = %s",
+				'_trolltrap_allowed'
+			)
+		);
+
+		// Normalize the meta-grouped rows and append the synthetic ones.
+		$out = array();
+
+		foreach ( (array) $rows as $row ) {
+			$out[] = array(
+				'filter' => '' === $row['filter_slug'] ? '(empty)' : $row['filter_slug'],
+				'count'  => (int) $row['comment_count'],
+			);
+		}
+
+		if ( $untagged > 0 ) {
+			$out[] = array(
+				'filter' => '(never evaluated)',
+				'count'  => $untagged,
+			);
+		}
+
+		$out[] = array(
+			'filter' => 'allowlisted',
+			'count'  => $allowlisted,
+		);
+
+		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
+
+		WP_CLI\Utils\format_items( $format, $out, array( 'filter', 'count' ) );
 	}
 
 	/**
