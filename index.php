@@ -27,3 +27,25 @@ function mahangu_troll_trap() {
 }
 
 add_action( 'plugins_loaded', 'mahangu_troll_trap' );
+
+/**
+ * Add a "Settings" shortcut to the plugin's row on the Plugins screen, since
+ * Troll Trap lives under Settings > Discussion rather than its own page.
+ *
+ * @param string[] $links Existing action links.
+ * @return string[]
+ */
+function mahangu_troll_trap_action_links( $links ) {
+
+	$settings_link = sprintf(
+		'<a href="%1$s">%2$s</a>',
+		esc_url( admin_url( 'options-discussion.php#trolltrap' ) ),
+		esc_html__( 'Settings', 'troll-trap' )
+	);
+
+	array_unshift( $links, $settings_link );
+
+	return $links;
+}
+
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'mahangu_troll_trap_action_links' );
