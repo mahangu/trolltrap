@@ -19,6 +19,7 @@ function trolltrap_uninstall_site() {
 	delete_option( 'trolltrap_words' );
 	delete_option( 'trolltrap_allowed' );
 	delete_option( 'trolltrap_default_filter' );
+	delete_option( 'trolltrap_disabled_filters' );
 	delete_option( 'trolltrap_graduated_enabled' );
 	delete_option( 'trolltrap_severity_ladder' );
 	delete_option( 'trolltrap_ai_enabled' );

@@ -94,6 +94,24 @@ class Mahangu_Troll_Trap_Settings {
 
 		register_setting(
 			'discussion',
+			'trolltrap_disabled_filters',
+			array(
+				'type'              => 'array',
+				'sanitize_callback' => array( $this, 'sanitize_disabled_filters' ),
+				'default'           => array(),
+			)
+		);
+
+		add_settings_field(
+			'trolltrap_disabled_filters',
+			__( 'Disabled Filters', 'troll-trap' ),
+			array( $this, 'settings_form_disabled_filters' ),
+			'discussion',
+			'trolltrap'
+		);
+
+		register_setting(
+			'discussion',
 			'trolltrap_graduated_enabled',
 			array(
 				'type'              => 'string',
@@ -145,6 +163,33 @@ class Mahangu_Troll_Trap_Settings {
 	 * @param mixed $value Raw option value.
 	 * @return string
 	 */
+	/**
+	 * Sanitize the disabled-filters list: keep only slugs of currently
+	 * registered transforming filters. Drops anything else.
+	 *
+	 * @param mixed $value Raw option value.
+	 * @return string[]
+	 */
+	public function sanitize_disabled_filters( $value ) {
+
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		$known = array_keys( $this->filters->transforming() );
+		$out   = array();
+
+		foreach ( $value as $slug ) {
+			$slug = sanitize_key( $slug );
+			if ( '' !== $slug && in_array( $slug, $known, true ) && ! in_array( $slug, $out, true ) ) {
+				$out[] = $slug;
+			}
+		}
+
+		return $out;
+	}
+
+
 	public function sanitize_graduated_enabled( $value ) {
 
 		return ( '1' === (string) $value ) ? '1' : '0';
@@ -201,6 +246,34 @@ class Mahangu_Troll_Trap_Settings {
 	}
 
 
+	public function settings_form_disabled_filters() {
+
+		printf(
+			'<p class="description">%s</p>',
+			esc_html__( 'Hide individual filters from the Default Filter, Severity Ladder, AI Fallback, and Mark-as-Troll choices. Previously-assigned filters keep rendering for already-trapped comments, so disabling here just narrows the choices available going forward.', 'troll-trap' )
+		);
+
+		$disabled = (array) get_option( 'trolltrap_disabled_filters', array() );
+
+		// Hidden field so an empty submission (all boxes unchecked) still
+		// posts a value and clears the option, instead of leaving the
+		// previous selection in place.
+		print '<input type="hidden" name="trolltrap_disabled_filters[]" value="">';
+
+		foreach ( $this->filters->transforming() as $filter ) {
+
+			$is_disabled = in_array( $filter['slug'], $disabled, true );
+
+			printf(
+				'<p style="margin: 4px 0;"><label><input type="checkbox" name="trolltrap_disabled_filters[]" value="%1$s"%2$s> %3$s</label></p>',
+				esc_attr( $filter['slug'] ),
+				$is_disabled ? ' checked="checked"' : '',
+				esc_html( $filter['name'] )
+			);
+		}
+	}
+
+
 	public function settings_form_default_filter() {
 
 		$stored_filter = esc_attr( get_option( 'trolltrap_default_filter', 'piglatin' ) );
@@ -212,7 +285,7 @@ class Mahangu_Troll_Trap_Settings {
 
 		print '<select name="trolltrap_default_filter" id="trolltrap_default_filter" style="display: block;">';
 
-		foreach ( $this->filters->transforming() as $filter ) {
+		foreach ( $this->filters->enabled() as $filter ) {
 
 			if ( $filter['slug'] === $stored_filter ) {
 
@@ -267,7 +340,7 @@ class Mahangu_Troll_Trap_Settings {
 			esc_html__( 'Preview', 'troll-trap' )
 		);
 
-		foreach ( $this->filters->transforming() as $filter ) {
+		foreach ( $this->filters->enabled() as $filter ) {
 
 			if ( null === $filter['callback'] ) {
 				continue;
@@ -318,7 +391,7 @@ class Mahangu_Troll_Trap_Settings {
 			printf( '<p><label>%s &nbsp;&rarr;&nbsp; ', esc_html( $label ) );
 			printf( '<select name="trolltrap_severity_ladder[%d]">', (int) $rung );
 
-			foreach ( $this->filters->transforming() as $filter ) {
+			foreach ( $this->filters->enabled() as $filter ) {
 				if ( $filter['slug'] === $selected_slug ) {
 					printf(
 						'<option value="%1$s" selected="selected">%2$s</option>',

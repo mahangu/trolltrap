@@ -560,7 +560,7 @@ class Mahangu_Troll_Trap_AI {
 			esc_html__( 'Fallback filter, used until the AI rewrite is ready', 'troll-trap' )
 		);
 
-		foreach ( $this->filters->transforming() as $filter ) {
+		foreach ( $this->filters->enabled() as $filter ) {
 
 			if ( 'llm' === $filter['slug'] ) {
 				continue; // The AI filter cannot be its own fallback.
