@@ -276,7 +276,7 @@ class Mahangu_Troll_Trap_AI {
 
 		if ( 'transient' === $result['status'] ) {
 			$attempts = (int) get_comment_meta( $comment_id, '_trolltrap_llm_attempts', true );
-			$attempts++;
+			++$attempts;
 
 			if ( $attempts < self::MAX_ATTEMPTS ) {
 				update_comment_meta( $comment_id, '_trolltrap_llm_attempts', $attempts );

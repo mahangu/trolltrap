@@ -544,8 +544,8 @@ class Mahangu_Troll_Trap_Settings {
 
 		if ( 'llm' === $comment_meta ) {
 
-			$tt        = mahangu_troll_trap();
-			$has_cache = ( $tt && $tt->ai && null !== $tt->ai->cached_text( $comment_id ) );
+			$tt         = mahangu_troll_trap();
+			$has_cache  = ( $tt && $tt->ai && null !== $tt->ai->cached_text( $comment_id ) );
 			$has_failed = ( $tt && $tt->ai && $tt->ai->has_failed( $comment_id ) );
 
 			if ( $has_cache ) {

@@ -176,7 +176,7 @@ class Mahangu_Troll_Trap_CLI {
 				$cid = (int) $cid;
 				delete_comment_meta( $cid, '_trolltrap_llm_text' );
 				$tt->comments_tag( $cid );
-				$processed++;
+				++$processed;
 				$progress->tick();
 				$last_id = $cid;
 			}
@@ -291,10 +291,10 @@ class Mahangu_Troll_Trap_CLI {
 
 		foreach ( $registry->all() as $filter ) {
 			$rows[] = array(
-				'slug'        => $filter['slug'],
-				'name'        => $filter['name'],
-				'severity'    => $filter['severity'],
-				'transforms'  => ( null === $filter['callback'] ) ? 'no' : 'yes',
+				'slug'       => $filter['slug'],
+				'name'       => $filter['name'],
+				'severity'   => $filter['severity'],
+				'transforms' => ( null === $filter['callback'] ) ? 'no' : 'yes',
 			);
 		}
 
