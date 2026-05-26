@@ -4,7 +4,7 @@ Tags: comments, comment-moderation, moderation, anti-spam, troll
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0-alpha.3
+Stable tag: 1.0.0-alpha.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -62,6 +62,14 @@ Only users who can moderate comments (Editors and Administrators by default).
 3. Trapped comments as they appear to site visitors, beside untouched ones.
 
 == Changelog ==
+
+= 1.0.0-alpha.4 =
+* Honor the Anthropic Retry-After header on AI rewrite retries so the backoff respects what the API asks for.
+* Add wp trolltrap reevaluate --all for site-wide re-evaluation against the current graylist, keyset-paginated to survive concurrent deletes.
+* Let the "Send a test rewrite" panel take a custom sample sentence so admins can test their own input through the configured style.
+* Add wp trolltrap dry-run-graylist for read-only previewing of which existing comments a candidate keyword list would trap.
+* Extract a pure Mahangu_Troll_Trap::match_keywords() helper so the production matcher and the dry-run path share one source of truth.
+* Tighten WPCS compliance on $_SERVER reads in the admin-post POST handlers.
 
 = 1.0.0-alpha.3 =
 * Add a per-comment "Regenerate AI rewrite" button in the Troll Trap Filter column so a stuck or off-style rewrite can be redone without touching anything else.
