@@ -650,7 +650,8 @@ class Mahangu_Troll_Trap_AI {
 	 */
 	public function handle_test_rewrite() {
 
-		if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+		if ( 'POST' !== $method ) {
 			wp_die( esc_html__( 'POST is required.', 'troll-trap' ), 405 );
 		}
 

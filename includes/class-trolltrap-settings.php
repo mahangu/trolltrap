@@ -590,7 +590,8 @@ class Mahangu_Troll_Trap_Settings {
 	 */
 	public function handle_set_filter() {
 
-		if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+		if ( 'POST' !== $method ) {
 			wp_die( esc_html__( 'POST is required.', 'troll-trap' ), 405 );
 		}
 
@@ -636,7 +637,8 @@ class Mahangu_Troll_Trap_Settings {
 	 */
 	public function handle_regenerate_ai() {
 
-		if ( 'POST' !== ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' ) ) {
+		$method = isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_METHOD'] ) ) : '';
+		if ( 'POST' !== $method ) {
 			wp_die( esc_html__( 'POST is required.', 'troll-trap' ), 405 );
 		}
 
