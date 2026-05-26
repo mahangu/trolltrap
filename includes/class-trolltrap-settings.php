@@ -544,17 +544,22 @@ class Mahangu_Troll_Trap_Settings {
 
 			$tt        = mahangu_troll_trap();
 			$has_cache = ( $tt && $tt->ai && null !== $tt->ai->cached_text( $comment_id ) );
+			$has_failed = ( $tt && $tt->ai && $tt->ai->has_failed( $comment_id ) );
 
-			$status = $has_cache
-				? __( 'AI rewrite ready.', 'troll-trap' )
-				: __( 'AI rewrite pending; showing the fallback filter.', 'troll-trap' );
+			if ( $has_cache ) {
+				$status = __( 'AI rewrite ready.', 'troll-trap' );
+			} elseif ( $has_failed ) {
+				$status = __( 'AI rewrite failed after retries; showing the fallback filter. Use Regenerate to try again.', 'troll-trap' );
+			} else {
+				$status = __( 'AI rewrite pending; showing the fallback filter.', 'troll-trap' );
+			}
 
 			printf(
 				'<p class="description" style="margin: 4px 0 0;">%s</p>',
 				esc_html( $status )
 			);
 
-			if ( $has_cache ) {
+			if ( $has_cache || $has_failed ) {
 				printf(
 					'<form method="POST" action="%1$s" style="margin: 4px 0 0;">',
 					esc_url( admin_url( 'admin-post.php' ) )
