@@ -20,6 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *     wp trolltrap status 42
  *     wp trolltrap filters
  *     wp trolltrap dry-run-graylist --keywords="badger,mushroom"
+ *     wp trolltrap dry-run-allowlist --keywords="trusted@example.com"
  */
 class Mahangu_Troll_Trap_CLI {
 
@@ -300,6 +301,57 @@ class Mahangu_Troll_Trap_CLI {
 	public function dry_run_graylist( $args, $assoc_args ) {
 
 		unset( $args );
+		$this->run_dry_run( $assoc_args, null, 'graylist' );
+	}
+
+	/**
+	 * Dry-run a candidate Comment Allowlist against existing comments, without
+	 * writing anything. Useful for sanity-checking a trusted-author list
+	 * before pasting it into Settings > Discussion > Comment Allowlist.
+	 *
+	 * Like the production allowlist, matching is restricted to author
+	 * identity fields (name, email, URL, IP, user agent) and deliberately
+	 * excludes the comment body, so the dry run reflects what the live
+	 * allowlist would actually do.
+	 *
+	 * ## OPTIONS
+	 *
+	 * --keywords=<list>
+	 * : Comma-separated keyword list to test. Required.
+	 *
+	 * [--limit=<n>]
+	 * : Maximum number of matching comments to show (default 20). Pass 0 for
+	 *   no limit.
+	 *
+	 * [--format=<format>]
+	 * : Render format: table, csv, json, yaml. Default: table.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp trolltrap dry-run-allowlist --keywords="trusted@example.com"
+	 *     wp trolltrap dry-run-allowlist --keywords="trusted@example.com" --format=json
+	 *
+	 * @param array $args       Positional arguments (unused).
+	 * @param array $assoc_args Flag arguments.
+	 */
+	public function dry_run_allowlist( $args, $assoc_args ) {
+
+		unset( $args );
+		$this->run_dry_run( $assoc_args, Mahangu_Troll_Trap::allowlist_match_fields(), 'allowlist' );
+	}
+
+	/**
+	 * Shared implementation for dry-run-graylist and dry-run-allowlist. Reads
+	 * --keywords, --limit, --format, walks comments newest-first via keyset
+	 * pagination, and prints the matches. $fields=null delegates to the
+	 * everything-scanned match_keywords; a non-null array narrows via
+	 * match_keywords_in.
+	 *
+	 * @param array       $assoc_args Flag arguments from the public command.
+	 * @param string[]|null $fields    Optional restricted field set.
+	 * @param string      $label      'graylist' or 'allowlist' for the summary line.
+	 */
+	private function run_dry_run( $assoc_args, $fields, $label ) {
 
 		if ( empty( $assoc_args['keywords'] ) ) {
 			WP_CLI::error( 'Missing required --keywords=<comma-separated list>.' );
@@ -318,7 +370,6 @@ class Mahangu_Troll_Trap_CLI {
 		$limit  = isset( $assoc_args['limit'] ) ? max( 0, (int) $assoc_args['limit'] ) : 20;
 		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
 
-		// Stream comments newest-first so the table favors recent activity.
 		global $wpdb;
 
 		$rows          = array();
@@ -350,7 +401,9 @@ class Mahangu_Troll_Trap_CLI {
 					continue;
 				}
 
-				$hit = Mahangu_Troll_Trap::match_keywords( $comment, $words );
+				$hit = null === $fields
+					? Mahangu_Troll_Trap::match_keywords( $comment, $words )
+					: Mahangu_Troll_Trap::match_keywords_in( $comment, $words, $fields );
 
 				if ( empty( $hit ) ) {
 					continue;
@@ -372,7 +425,7 @@ class Mahangu_Troll_Trap_CLI {
 		}
 
 		if ( empty( $rows ) ) {
-			WP_CLI::success( 'No existing comments match the supplied keywords.' );
+			WP_CLI::success( sprintf( 'No existing comments match the supplied %s.', $label ) );
 			return;
 		}
 
@@ -381,7 +434,7 @@ class Mahangu_Troll_Trap_CLI {
 		WP_CLI::log(
 			$limit > 0 && $matched_count >= $limit
 				? sprintf( 'Showing first %d match(es). Run with --limit=0 for the full list.', $limit )
-				: sprintf( '%d comment(s) would match this graylist.', $matched_count )
+				: sprintf( '%d comment(s) would match this %s.', $matched_count, $label )
 		);
 	}
 
