@@ -84,19 +84,22 @@ class Mahangu_Troll_Trap_Convert {
 		// is a complete UTF-8 sequence.
 		$vowels = array( 'a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U' );
 
-		// Latin-1 Supplement accented vowel codepoints (precomposed).
-		$codepoints = array(
-			0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, // uppercase A variants.
-			0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, // lowercase a variants.
-			0xC8, 0xC9, 0xCA, 0xCB,             // uppercase E variants.
-			0xE8, 0xE9, 0xEA, 0xEB,             // lowercase e variants.
-			0xCC, 0xCD, 0xCE, 0xCF,             // uppercase I variants.
-			0xEC, 0xED, 0xEE, 0xEF,             // lowercase i variants.
-			0xD2, 0xD3, 0xD4, 0xD5, 0xD6,       // uppercase O variants.
-			0xF2, 0xF3, 0xF4, 0xF5, 0xF6,       // lowercase o variants.
-			0xD9, 0xDA, 0xDB, 0xDC,             // uppercase U variants.
-			0xF9, 0xFA, 0xFB, 0xFC,             // lowercase u variants.
-			0xDD, 0xFD, 0xFF, 0x178,            // Y, y, y-diaeresis variants.
+		// Latin-1 Supplement accented vowel codepoints (precomposed),
+		// grouped by base letter. Built with range()/array_merge() so the
+		// multi-line array stays WPCS-compliant (one item per line) without
+		// listing every codepoint individually.
+		$codepoints = array_merge(
+			range( 0xC0, 0xC5 ), // uppercase A variants.
+			range( 0xE0, 0xE5 ), // lowercase a variants.
+			range( 0xC8, 0xCB ), // uppercase E variants.
+			range( 0xE8, 0xEB ), // lowercase e variants.
+			range( 0xCC, 0xCF ), // uppercase I variants.
+			range( 0xEC, 0xEF ), // lowercase i variants.
+			range( 0xD2, 0xD6 ), // uppercase O variants.
+			range( 0xF2, 0xF6 ), // lowercase o variants.
+			range( 0xD9, 0xDC ), // uppercase U variants.
+			range( 0xF9, 0xFC ), // lowercase u variants.
+			array( 0xDD, 0xFD, 0xFF, 0x178 ) // Y, y, y-diaeresis variants.
 		);
 
 		foreach ( $codepoints as $cp ) {
