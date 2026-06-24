@@ -297,8 +297,14 @@ class Mahangu_Troll_Trap_AI {
 
 		if ( 'ok' === $result['status'] && null !== $result['text'] ) {
 			// Sanitize before caching so a prompt-injected response can never
-			// introduce active markup into the rendered comment.
-			update_comment_meta( $comment_id, '_trolltrap_llm_text', wp_kses_post( $result['text'] ) );
+			// introduce active markup into the rendered comment. Use the comment
+			// context (wp_kses_allowed_html( 'comment' )) rather than the post
+			// context (wp_kses_post): comment KSES strips <img> and other
+			// post-only tags that a prompt-injected model could otherwise use to
+			// plant tracking pixels or rich HTML that normal comments can never
+			// contain.
+			$allowed = wp_kses_allowed_html( 'comment' );
+			update_comment_meta( $comment_id, '_trolltrap_llm_text', wp_kses( $result['text'], $allowed ) );
 			delete_comment_meta( $comment_id, '_trolltrap_llm_attempts' );
 			return;
 		}

@@ -260,12 +260,6 @@ class Mahangu_Troll_Trap_Settings {
 
 
 	/**
-	 * Sanitize the graduated-severity toggle to '1' or '0'.
-	 *
-	 * @param mixed $value Raw option value.
-	 * @return string
-	 */
-	/**
 	 * Sanitize the disabled-filters list: keep only slugs of currently
 	 * registered transforming filters. Drops anything else.
 	 *
@@ -292,6 +286,12 @@ class Mahangu_Troll_Trap_Settings {
 	}
 
 
+		/**
+	 * Sanitize the graduated-severity toggle to '1' or '0'.
+	 *
+	 * @param mixed $value Raw option value.
+	 * @return string
+	 */
 	public function sanitize_graduated_enabled( $value ) {
 
 		return ( '1' === (string) $value ) ? '1' : '0';
