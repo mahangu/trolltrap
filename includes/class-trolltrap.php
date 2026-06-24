@@ -41,9 +41,19 @@ class Mahangu_Troll_Trap {
 
 	public function __construct() {
 
-		add_action( 'comment_post', array( $this, 'comments_tag' ), 10, 1 );
+		// Tag new comments against the graylist. We hook wp_insert_comment
+		// rather than comment_post because wp_insert_comment is the single
+		// insertion choke point: comment_post only fires from the
+		// wp_new_comment() path, so comments created directly by import/migration
+		// plugins via wp_insert_comment() would otherwise slip through untagged.
+		add_action( 'wp_insert_comment', array( $this, 'comments_tag' ), 10, 1 );
 
-		add_filter( 'comment_text', array( $this, 'comments_render' ), 10, 2 );
+		// Transform the comment text before WordPress' own formatting filters
+		// run (make_clickable at 9, wpautop at 30, ...). Running early means
+		// the transforms see the raw comment content instead of HTML-wrapped
+		// markup, so disemvowel et al. never mangle vowels inside <a> tags or
+		// <p> wrappers.
+		add_filter( 'comment_text', array( $this, 'comments_render' ), 8, 2 );
 
 		// Surface the trapped state in the comment's CSS class list so themes
 		// can style trapped comments distinctly (greyed out, italic, etc.).
@@ -94,7 +104,7 @@ class Mahangu_Troll_Trap {
 		$this->filters->register( 'leetspeak', __( 'Leetspeak', 'troll-trap' ), array( $this->convert, 'leetspeak' ), 1 );
 		$this->filters->register( 'mocking', __( 'Mocking Case', 'troll-trap' ), array( $this->convert, 'mocking' ), 1 );
 		$this->filters->register( 'uwu', __( 'uwu', 'troll-trap' ), array( $this->convert, 'uwu' ), 1 );
-		$this->filters->register( 'reverse', __( 'Reverse Words', 'troll-trap' ), array( $this->convert, 'reverse' ), 2 );
+		$this->filters->register( 'reverse', __( 'Reverse Letters', 'troll-trap' ), array( $this->convert, 'reverse' ), 2 );
 		$this->filters->register( 'rot13', __( 'ROT13', 'troll-trap' ), array( $this->convert, 'rot13' ), 2 );
 		$this->filters->register( 'disemvowel', __( 'Disemvowel', 'troll-trap' ), array( $this->convert, 'disemvowel' ), 3 );
 		$this->filters->register( 'zalgo', __( 'Zalgo', 'troll-trap' ), array( $this->convert, 'zalgo' ), 3 );
@@ -319,16 +329,6 @@ class Mahangu_Troll_Trap {
 
 
 	/**
-	 * Filter a comment's displayed text according to its stored filter.
-	 *
-	 * Hooks into 'comment_text', which fires wherever a comment is rendered.
-	 *
-	 * @since 0.1.0
-	 * @param string          $content The comment text.
-	 * @param WP_Comment|null $comment The comment object, when supplied by the caller.
-	 * @return string
-	 */
-	/**
 	 * Append trolltrap-* CSS classes to a comment's wrapper when it has a
 	 * non-trivial Troll Trap filter. Lets theme authors target trapped
 	 * comments without re-implementing the meta read.
@@ -363,6 +363,17 @@ class Mahangu_Troll_Trap {
 		return $classes;
 	}
 
+		/**
+	 * Filter a comment's displayed text according to its stored filter.
+	 *
+	 * Hooks into 'comment_text' at priority 8, ahead of WordPress' own
+	 * formatting filters, so transforms operate on the raw comment content.
+	 *
+	 * @since 0.1.0
+	 * @param string          $content The comment text.
+	 * @param WP_Comment|null $comment The comment object, when supplied by the caller.
+	 * @return string
+	 */
 	public function comments_render( $content, $comment = null ) {
 
 		// Leave the comment untouched in the admin (e.g. edit-comments.php).

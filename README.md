@@ -2,7 +2,7 @@
 
 Troll Trap is a WordPress plugin that selectively filters and obfuscates comments based on keywords found in them — a moderation tier between `Approved` and `Unapproved` that keeps a comment visible while making its content inaccessible to readers.
 
-> **Status: `1.0.0-alpha.6`** — an early release. The core features are in place and covered by CI across WordPress 6.5–nightly and PHP 8.0–8.3, but expect rough edges. Bug reports and feedback are very welcome.
+> **Status: `1.0.0-alpha.8`** — an early release. The core features are in place and covered by CI across WordPress 6.5–nightly and PHP 8.0–8.3, but expect rough edges. Bug reports and feedback are very welcome.
 
 Troll Trap's functionality is twofold.
 

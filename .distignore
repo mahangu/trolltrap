@@ -8,3 +8,7 @@ phpcs.xml.dist
 README.md
 CONTRIBUTING.md
 build
+
+# Local agent/tooling state — never ship these.
+.omc
+.claude

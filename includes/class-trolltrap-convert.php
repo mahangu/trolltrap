@@ -75,13 +75,36 @@ class Mahangu_Troll_Trap_Convert {
 
 	public function disemvowel( $text ) {
 
-		return str_replace(
-			array( 'a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U' ),
-			'',
-			(string) $text
-		);
-	}
+		// The plain ASCII vowels plus the common Latin-1 accented vowels, so
+		// a troll writing in accented English (or French/German/Portuguese/...)
+		// cannot keep their vowels just by switching to a diacritic. The
+		// accented letters are built from their Unicode codepoints with mb_chr()
+		// so this file stays pure ASCII and there is no risk of mojibake from a
+		// mis-encoded editor. str_replace is byte-safe here because every entry
+		// is a complete UTF-8 sequence.
+		$vowels = array( 'a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U' );
 
+		// Latin-1 Supplement accented vowel codepoints (precomposed).
+		$codepoints = array(
+			0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, // uppercase A variants.
+			0xE0, 0xE1, 0xE2, 0xE3, 0xE4, 0xE5, // lowercase a variants.
+			0xC8, 0xC9, 0xCA, 0xCB,             // uppercase E variants.
+			0xE8, 0xE9, 0xEA, 0xEB,             // lowercase e variants.
+			0xCC, 0xCD, 0xCE, 0xCF,             // uppercase I variants.
+			0xEC, 0xED, 0xEE, 0xEF,             // lowercase i variants.
+			0xD2, 0xD3, 0xD4, 0xD5, 0xD6,       // uppercase O variants.
+			0xF2, 0xF3, 0xF4, 0xF5, 0xF6,       // lowercase o variants.
+			0xD9, 0xDA, 0xDB, 0xDC,             // uppercase U variants.
+			0xF9, 0xFA, 0xFB, 0xFC,             // lowercase u variants.
+			0xDD, 0xFD, 0xFF, 0x178,            // Y, y, y-diaeresis variants.
+		);
+
+		foreach ( $codepoints as $cp ) {
+			$vowels[] = mb_chr( $cp, 'UTF-8' );
+		}
+
+		return str_replace( $vowels, '', (string) $text );
+	}
 	/**
 	 * Alternate the case of each letter — "mOcKiNg cAsE".
 	 *

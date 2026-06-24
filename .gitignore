@@ -4,3 +4,7 @@
 phpcs-report.xml
 *.iml
 .idea/
+
+# Local agent/tooling state — never ship these.
+.omc/
+.claude/

@@ -4,7 +4,7 @@ Tags: comments, comment-moderation, moderation, anti-spam, troll
 Requires at least: 6.5
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.0.0-alpha.7
+Stable tag: 1.0.0-alpha.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,7 +28,7 @@ Instead of deleting or hiding a troll's comment, Troll Trap transforms its text 
 * **Leetspeak** — swaps letters for numerals (l33t 5p34k).
 * **Mocking Case** — aLtErNaTeS tHe CaSe of every letter.
 * **uwu** — softens the text by turning r and l into w.
-* **Reverse Words** — reverses each word.
+* **Reverse Letters** — reverses the letters of each word.
 * **ROT13** — applies the ROT13 letter cipher.
 * **Disemvowel** — strips the vowels, leaving text that is readable, but only slowly.
 * **Zalgo** — decorates the text with combining marks into "cursed" text.
@@ -62,6 +62,14 @@ Only users who can moderate comments (Editors and Administrators by default).
 3. Trapped comments as they appear to site visitors, beside untouched ones.
 
 == Changelog ==
+
+= 1.0.0-alpha.8 =
+* Tag comments created via wp_insert_comment() as well as the normal wp_new_comment() path, so import and migration plugins no longer slip through the graylist untagged.
+* Transform the comment text at priority 8 on comment_text, ahead of WordPress' own formatting filters, so filters like Disemvowel operate on the raw content instead of HTML-wrapped markup (no more mangled vowels inside links or paragraph tags).
+* Disemvowel now strips common Latin-1 accented vowels (cafÃ©, Ã¼ber, naÃ¯ve, ...) as well as plain ASCII ones, so switching to a diacritic no longer preserves a troll's vowels.
+* Rename the "Reverse Words" filter to "Reverse Letters" to match what it actually does (reverse the letters within each word).
+* Fix two orphaned docblocks whose text had drifted onto the wrong method.
+* Add .omc/ and .claude/ to the ignore/distignore lists so local agent state never ships in the distribution zip.
 
 = 1.0.0-alpha.7 =
 * Add wp trolltrap export-settings and import-settings (with --dry-run) so the plugin's configuration can be round-tripped between sites or saved as a backup. The Anthropic API key is deliberately excluded from exports.
@@ -108,7 +116,7 @@ Only users who can moderate comments (Editors and Administrators by default).
 * Keyword graylist that automatically applies a filter to matching comments.
 * Per-comment filter selection on the Comments admin screen.
 * Mark as Troll and Untrap bulk actions.
-* Eight built-in filters: Piglatin, Leetspeak, Mocking Case, uwu, Reverse Words, ROT13, Disemvowel and Zalgo — each multibyte- and whitespace-safe.
+* Eight built-in filters: Piglatin, Leetspeak, Mocking Case, uwu, Reverse Letters, ROT13, Disemvowel and Zalgo — each multibyte- and whitespace-safe.
 * A filter registry with a trolltrap_register_filters action for registering custom filters.
 * Optional graduated severity: escalate the filter by how many graylist keywords a comment matches.
 * Optional AI Rewrite filter: rewrites a trapped comment in a configurable style (Klingon, Shakespearean, ...) via the Anthropic API — opt-in, bring-your-own API key.
