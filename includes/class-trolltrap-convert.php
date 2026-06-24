@@ -91,11 +91,13 @@ class Mahangu_Troll_Trap_Convert {
 		$codepoints = array_merge(
 			range( 0xC0, 0xC5 ), // uppercase A variants.
 			range( 0xE0, 0xE5 ), // lowercase a variants.
+			array( 0xC6, 0xE6 ),   // AE ligature (Ã/Ã¦).
 			range( 0xC8, 0xCB ), // uppercase E variants.
 			range( 0xE8, 0xEB ), // lowercase e variants.
 			range( 0xCC, 0xCF ), // uppercase I variants.
 			range( 0xEC, 0xEF ), // lowercase i variants.
 			range( 0xD2, 0xD6 ), // uppercase O variants.
+			array( 0xD8, 0xF8 ),   // O with stroke (Ã/Ã¸).
 			range( 0xF2, 0xF6 ), // lowercase o variants.
 			range( 0xD9, 0xDC ), // uppercase U variants.
 			range( 0xF9, 0xFC ), // lowercase u variants.

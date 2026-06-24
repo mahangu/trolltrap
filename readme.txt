@@ -66,8 +66,12 @@ Only users who can moderate comments (Editors and Administrators by default).
 = 1.0.0-alpha.8 =
 * Tag comments created via wp_insert_comment() as well as the normal wp_new_comment() path, so import and migration plugins no longer slip through the graylist untagged.
 * Transform the comment text at priority 8 on comment_text, ahead of WordPress' own formatting filters, so filters like Disemvowel operate on the raw content instead of HTML-wrapped markup (no more mangled vowels inside links or paragraph tags).
-* Disemvowel now strips common Latin-1 accented vowels (cafÃ©, Ã¼ber, naÃ¯ve, ...) as well as plain ASCII ones, so switching to a diacritic no longer preserves a troll's vowels.
+* Disemvowel now strips common Latin-1 accented vowels (café, über, naïve, ...) as well as plain ASCII ones, so switching to a diacritic no longer preserves a troll's vowels.
 * Rename the "Reverse Words" filter to "Reverse Letters" to match what it actually does (reverse the letters within each word).
+* Disemvowel now also strips the AE ligature (Ã/Ã¦) and O-with-stroke (Ã/Ã¸), closing a gap where Danish/Norwegian vowels survived.
+* Add the UTF-8 (u) flag to graylist keyword matching, so accented keywords match regardless of case (a lowercase cafÃ© keyword now catches CAFÃ) and cannot be evaded by swapping an accented letter's case.
+* Sanitize AI rewrites with comment-context KSES instead of wp_kses_post, so a prompt-injected rewrite cannot plant <img> tracking pixels or other post-only markup that normal comments are never allowed to contain.
+* Apply the comment_text transform on admin-ajax.php requests too, so comments rendered through AJAX handlers (load-more, infinite scroll) are obfuscated for readers like everywhere else.
 * Fix two orphaned docblocks whose text had drifted onto the wrong method.
 * Add .omc/ and .claude/ to the ignore/distignore lists so local agent state never ships in the distribution zip.
 

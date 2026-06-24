@@ -221,7 +221,12 @@ class Mahangu_Troll_Trap {
 			}
 
 			// Escape so a '#' in the keyword cannot break the pattern delimiter.
-			$pattern = '#' . preg_quote( $word, '#' ) . '#i';
+			// The 'i' flag is case-insensitive and the 'u' flag makes PCRE treat
+			// the subject and pattern as UTF-8, so Unicode case-folding works
+			// (e.g. a lowercase 'cafÃÂ©' keyword matches 'CAFÃâ°'). Without 'u', PCRE
+			// operates on bytes and accented letters don't fold, letting a troll
+			// evade an accented graylist keyword by swapping its case.
+			$pattern = '#' . preg_quote( $word, '#' ) . '#iu';
 
 			foreach ( (array) $fields as $field ) {
 				if ( ! isset( $comment->$field ) ) {
@@ -363,7 +368,7 @@ class Mahangu_Troll_Trap {
 		return $classes;
 	}
 
-		/**
+	/**
 	 * Filter a comment's displayed text according to its stored filter.
 	 *
 	 * Hooks into 'comment_text' at priority 8, ahead of WordPress' own
@@ -377,7 +382,11 @@ class Mahangu_Troll_Trap {
 	public function comments_render( $content, $comment = null ) {
 
 		// Leave the comment untouched in the admin (e.g. edit-comments.php).
-		if ( is_admin() ) {
+		// is_admin() is also true for admin-ajax.php, but AJAX handlers on the
+		// front end (load-more-comments, infinite scroll, AJAX comment replies)
+		// render comments for readers, so only skip the wp-admin screen context,
+		// not AJAX requests.
+		if ( is_admin() && ! wp_doing_ajax() ) {
 			return $content;
 		}
 
